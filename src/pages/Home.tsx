@@ -18,16 +18,16 @@ import {
   import { bookOutline, search, star } from 'ionicons/icons';
   import { Route, Redirect } from 'react-router';
 
-  import Favorites from './home-tabs/Favorites';
-  import Feed from './home-tabs/Feed';
+  import ProductListLogs from './home-tabs/ProductListLogs';
+  import Products from './home-tabs/Products';
   import Search from './home-tabs/Search';
   
   const Home: React.FC = () => {
      
     const tabs = [
-      {name:'Feed', tab:'feed',url: '/TRA_App2/app/home/feed', icon: bookOutline},
+      {name:'Products', tab:'Products',url: '/TRA_App2/app/home/Products', icon: bookOutline},
       {name:'Search', tab:'search',url: '/TRA_App2/app/home/search', icon: search},
-      {name:'Favorites', tab:'favorites',url: '/TRA_App2/app/home/favorites', icon: star},
+      {name:'ProductListLogs', tab:'ProductListLogs',url: '/TRA_App2/app/home/ProductListLogs', icon: star},
       
     ]
     return (
@@ -43,11 +43,11 @@ import {
             
           </IonTabBar>
         <IonRouterOutlet>
-          <Route exact path="/TRA_App2/app/home/feed" render={Feed} />
+          <Route exact path="/TRA_App2/app/home/Products" render={Products} />
           <Route exact path="/TRA_App2/app/home/search" render={Search} />
-          <Route exact path="/TRA_App2/app/home/favorites" render={Favorites} />
+          <Route exact path="/TRA_App2/app/home/ProductListLogs" render={ProductListLogs} />
           <Route exact path="/TRA_App2/app/home">
-            <Redirect to="/TRA_App2/app/home/feed" />
+            <Redirect to="/TRA_App2/app/home/Products" />
           </Route>
         </IonRouterOutlet>
         </IonTabs>
