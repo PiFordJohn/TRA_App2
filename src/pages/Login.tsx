@@ -55,14 +55,14 @@ import {
 
     setShowToast(true); 
     setTimeout(() => {
-      navigation.push('/it35-lab/app', 'forward', 'replace');
+      navigation.push('/TRA_App2/app', 'forward', 'replace');
     }, 300);
   };
 
     return (
        <IonPage>
       <IonContent className='ion-padding'style={{ 
-  '--background': 'url(/it35-lab/assets/warcraft-bg.jpg) no-repeat center center / cover' 
+  '--background': 'url(/TRA_App2/assets/warcraft-bg.jpg) no-repeat center center / cover' 
      }}>
 
       <IonGrid>
@@ -130,7 +130,7 @@ import {
         </IonButton>
 
         <IonButton style={{ color:'white', fontFamily:'cursive'}}
-        routerLink="/it35-lab/register" expand="full" fill="clear" shape='round'>
+        routerLink="/TRA_App2/register" expand="full" fill="clear" shape='round'>
           Don't have an account? Sign Up !
         </IonButton>
 

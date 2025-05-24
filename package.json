@@ -1,9 +1,9 @@
 {
-  "name": "it35-lab",
+  "name": "TRA_App2",
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "homepage": "https://github.com/PiFordJohn/it35-lab",
+  "homepage": "https://github.com/PiFordJohn/TRA_App2",
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",

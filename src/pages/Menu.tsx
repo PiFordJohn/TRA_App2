@@ -33,16 +33,16 @@ import {
     const [showToast, setShowToast] = useState(false);
 
     const path = [
-      {name:'Home', url: '/it35-lab/app/home', icon: homeOutline},
-      {name:'About', url: '/it35-lab/app/about', icon: rocketOutline},
-      {name:'Profile', url: '/it35-lab/app/profile', icon: settingsOutline},
+      {name:'Home', url: '/TRA_App2/app/home', icon: homeOutline},
+      {name:'About', url: '/TRA_App2/app/about', icon: rocketOutline},
+      {name:'Profile', url: '/TRA_App2/app/profile', icon: settingsOutline},
   ]  
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (!error) {
         setShowToast(true);
         setTimeout(() => {
-            navigation.push('/it35-lab', 'back', 'replace'); 
+            navigation.push('/TRA_App2', 'back', 'replace'); 
         }, 300); 
     } else {
         setErrorMessage(error.message);
@@ -77,13 +77,13 @@ import {
                     </IonContent>
                 </IonMenu>
                 <IonRouterOutlet id="main">
-                    <Route exact path="/it35-lab/app/home" component={Home} />
-                    <Route exact path="/it35-lab/app/home/details" component={Details} />
-                    <Route exact path="/it35-lab/app/about" component={About} />
-                    <Route exact path="/it35-lab/app/profile" component={EditProfilePage} />
+                    <Route exact path="/TRA_App2/app/home" component={Home} />
+                    <Route exact path="/TRA_App2/app/home/details" component={Details} />
+                    <Route exact path="/TRA_App2/app/about" component={About} />
+                    <Route exact path="/TRA_App2/app/profile" component={EditProfilePage} />
                     
-                    <Route exact path="/it35-lab/app">
-                    <Redirect to="/it35-lab/app/home"/>
+                    <Route exact path="/TRA_App2/app">
+                    <Redirect to="/TRA_App2/app/home"/>
                     </Route>
                 </IonRouterOutlet>
                 {/* IonAlert for displaying login errors */}

@@ -116,7 +116,7 @@ return (
 
       <IonContent className="ion-padding"
     style={{ 
-        '--background': 'url(/it35-lab/assets/warcraft-bg.jpg) no-repeat center center / cover' 
+        '--background': 'url(/TRA_App2/assets/warcraft-bg.jpg) no-repeat center center / cover' 
            }}>
 
     <IonGrid>
@@ -154,7 +154,7 @@ return (
           <IonButton onClick={handleOpenVerificationModal} expand="full" shape='round' color='success'style={{ marginTop: '15px',fontFamily:'cursive' }}>
               Register
           </IonButton>
-          <IonButton style={{ color:'white', fontFamily:'cursive'}}routerLink="/it35-lab" expand="full" fill="clear" shape='round' >
+          <IonButton style={{ color:'white', fontFamily:'cursive'}}routerLink="/TRA_App2" expand="full" fill="clear" shape='round' >
               Already have an account? Sign in
           </IonButton>
           </div>
@@ -195,7 +195,7 @@ return (
                       <p>Your account has been created successfully.</p>
                       <p>Please check your email address.</p>
                   </IonText>
-                  <IonButton routerLink="/it35-lab" routerDirection="back" color="primary">
+                  <IonButton routerLink="/TRA_App2" routerDirection="back" color="primary">
                       Go to Login
                   </IonButton>
               </IonContent>

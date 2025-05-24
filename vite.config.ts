@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     legacy()
   ],
-  base:"/it35-lab",
+  base:"/TRA_App2",
   test: {
     globals: true,
     environment: 'jsdom',
