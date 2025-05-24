@@ -116,7 +116,7 @@ return (
 
       <IonContent className="ion-padding"
     style={{ 
-        '--background': 'url(/TRA_App2/assets/warcraft-bg.jpg) no-repeat center center / cover' 
+        '--background': 'url(/TRA_App2/assets/TRA_Background.jpg) no-repeat center center / cover' 
            }}>
 
     <IonGrid>

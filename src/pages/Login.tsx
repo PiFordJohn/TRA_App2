@@ -20,7 +20,7 @@ import {
       IonGrid,
       IonRow
   } from '@ionic/react';
-  import logo1 from '../../img/logo1.png';
+  import logo2 from '../../img/logo2.jpg';
   import { useState } from 'react';
   import { supabase } from '../utils/supabaseClient';
   
@@ -62,7 +62,7 @@ import {
     return (
        <IonPage>
       <IonContent className='ion-padding'style={{ 
-  '--background': 'url(/TRA_App2/assets/warcraft-bg.jpg) no-repeat center center / cover' 
+  '--background': 'url(/TRA_App2/assets/TRA_Background.jpg) no-repeat center center / cover' 
      }}>
 
       <IonGrid>
@@ -88,7 +88,7 @@ import {
             }}
           >
             <img 
-             src={logo1}
+             src={logo2}
             alt="User Avatar"
             style={{
            width: '100%',
@@ -105,7 +105,7 @@ import {
             fontFamily: 'cursive',
             fontWeight:'bolder'
           }}
-          >STEAM LOGIN</h1>
+          >USER LOGIN</h1>
           <IonInput style={{ marginTop:'10px', color:'white', fontFamily:'cursive' }}
             label="Email" 
             labelPlacement="floating" 
