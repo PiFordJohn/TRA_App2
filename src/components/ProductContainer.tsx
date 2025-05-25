@@ -6,7 +6,7 @@ import {
 import { useHistory } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabaseClient';
-import { add, create, trash } from 'ionicons/icons';
+import { add } from 'ionicons/icons';
 
 interface Product {
   product_id: string;
@@ -197,20 +197,15 @@ const ProductContainer = () => {
     <IonContent className="ion-padding">
       {!showAddForm ? (
         <>
-          <div style={{ padding: '16px', display: 'flex', justifyContent: 'flex-start', gap: '16px' }}>
-            <IonButton onClick={() => setShowAddForm(true)}>
-              <IonIcon icon={add} slot="start" />
-              Add Product
-            </IonButton>
-            <IonButton color="warning" onClick={() => history.push('/TRA_App2/app/home/ProductListLogs')}>
-              <IonIcon icon={create} slot="start" />
-              Update Product
-            </IonButton>
-            <IonButton color="danger" onClick={() => history.push('/TRA_App2/app/home/ProductListLogs')}>
-              <IonIcon icon={trash} slot="start" />
-              Delete Product
-            </IonButton>
-          </div>
+          {/* Add Product button inside IonCard */}
+          <IonCard style={{ margin: '16px' }}>
+            <IonCardContent style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <IonButton onClick={() => setShowAddForm(true)}>
+                <IonIcon icon={add} slot="start" />
+                Add Product
+              </IonButton>
+            </IonCardContent>
+          </IonCard>
 
           <IonGrid>
             <IonRow>
@@ -240,7 +235,7 @@ const ProductContainer = () => {
               <IonRow>
                 <IonCol size="12" sizeMd="6">
                   <IonItem>
-                    <IonLabel position="floating">Product Name*</IonLabel><br></br>
+                    <IonLabel position="floating">Product Name*</IonLabel><br />
                     <IonInput
                       value={productName}
                       onIonChange={e => setProductName(e.detail.value!)}
@@ -250,7 +245,7 @@ const ProductContainer = () => {
                 </IonCol>
                 <IonCol size="12" sizeMd="6">
                   <IonItem>
-                    <IonLabel position="floating">Price*</IonLabel><br></br>
+                    <IonLabel position="floating">Price*</IonLabel><br />
                     <IonInput
                       type="number"
                       value={price}
@@ -263,7 +258,7 @@ const ProductContainer = () => {
               <IonRow>
                 <IonCol size="12" sizeMd="6">
                   <IonItem>
-                    <IonLabel position="floating">Stock Quantity</IonLabel><br></br>
+                    <IonLabel position="floating">Stock Quantity</IonLabel><br />
                     <IonInput
                       type="number"
                       value={stockQuantity}
@@ -274,7 +269,7 @@ const ProductContainer = () => {
                 </IonCol>
                 <IonCol size="12" sizeMd="6">
                   <IonItem>
-                    <IonLabel>Category</IonLabel><br></br>
+                    <IonLabel>Category</IonLabel><br />
                     <IonSelect
                       value={category}
                       onIonChange={e => setCategory(e.detail.value)}
@@ -290,7 +285,7 @@ const ProductContainer = () => {
               <IonRow>
                 <IonCol size="12">
                   <IonItem>
-                    <IonLabel position="floating">Description</IonLabel>
+                    <IonLabel position="floating">Description</IonLabel><br></br>
                     <IonInput
                       value={description}
                       onIonChange={e => setDescription(e.detail.value!)}
