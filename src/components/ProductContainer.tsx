@@ -1,7 +1,7 @@
-import { useState, useEffect, ChangeEvent } from 'react';
-import { 
+import { useState, useEffect } from 'react';
+import {
   IonContent, IonButton, IonInput, IonLabel, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle,
-  IonAlert, IonText, IonCol, IonGrid, IonRow, IonIcon, IonItem, IonSelect, IonSelectOption, IonThumbnail, IonBadge, IonSpinner
+  IonAlert, IonText, IonCol, IonGrid, IonRow, IonIcon, IonItem, IonSelect, IonSelectOption, IonBadge, IonSpinner
 } from '@ionic/react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabaseClient';
@@ -15,12 +15,11 @@ interface Product {
   price: number;
   stock_quantity: number;
   category: string | null;
-  image_url: string;
   created_at: string;
   updated_at: string;
 }
 
-interface AppUser  {
+interface AppUser {
   user_id: number;
   email: string;
   username?: string;
@@ -34,19 +33,19 @@ const ProductContainer = () => {
   const [price, setPrice] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
   const [category, setCategory] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState('');
-  const [authUser , setAuthUser ] = useState<User | null>(null);
-  const [appUser , setAppUser ] = useState<AppUser  | null>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [categories] = useState<string[]>(['Electronics', 'Clothing', 'Food', 'Other']);
+  const [categories] = useState<string[]>(['Accessories', 'Clothing', 'Food', 'Drinks', 'Condiments']);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let subscription: any;
+
     const fetchData = async () => {
       setIsLoading(true);
 
-      // Fetch authenticated user
       const { data: authUserData, error: authError } = await supabase.auth.getUser();
       if (authError) {
         console.error('Error getting auth user:', authError);
@@ -57,7 +56,6 @@ const ProductContainer = () => {
       setAuthUser(fetchedUser);
 
       if (fetchedUser?.email) {
-        // Fetch app user info by email
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
@@ -70,15 +68,10 @@ const ProductContainer = () => {
           return;
         }
         if (userData) {
-          setAppUser (userData as AppUser );
-        } else {
-          console.warn('No user data found for email:', fetchedUser.email);
+          setAppUser(userData as AppUser);
         }
-      } else {
-        console.warn('No authenticated user found.');
       }
 
-      // Fetch products list
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
@@ -91,9 +84,26 @@ const ProductContainer = () => {
       }
 
       setIsLoading(false);
+
+      subscription = supabase
+        .channel('public:products')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'products' },
+          (payload) => {
+            setProducts((current) => [payload.new as Product, ...current]);
+          }
+        )
+        .subscribe();
     };
 
     fetchData();
+
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+    };
   }, []);
 
   const resetForm = () => {
@@ -102,50 +112,7 @@ const ProductContainer = () => {
     setPrice('');
     setStockQuantity('');
     setCategory(null);
-    setImageUrl('');
   };
-
-  // Implement image upload to Supabase storage bucket "product-images"
-  async function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    // Optional: Validate file type and size here
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        console.error('Error uploading image:', error);
-        setAlertMessage('Error uploading image: ' + error.message);
-        setIsAlertOpen(true);
-        return;
-      }
-
-      // Get public URL for the uploaded image
-      const { data: publicUrlData } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      setImageUrl(publicUrlData.publicUrl);
-
-    } catch (uploadError) {
-      console.error('Upload error:', uploadError);
-      setAlertMessage('Upload error: ' + (uploadError as Error).message);
-      setIsAlertOpen(true);
-    }
-  }
 
   const createProduct = async () => {
     if (!productName.trim()) {
@@ -160,8 +127,8 @@ const ProductContainer = () => {
       return;
     }
 
-    if (!appUser ) {
-      setAlertMessage('User  information not available');
+    if (!appUser) {
+      setAlertMessage('User information not available');
       setIsAlertOpen(true);
       return;
     }
@@ -172,11 +139,8 @@ const ProductContainer = () => {
       price: parseFloat(price),
       stock_quantity: stockQuantity ? parseInt(stockQuantity) : 0,
       category: category ? category : null,
-      image_url: imageUrl || 'https://via.placeholder.com/150',
-      user_id: appUser .user_id
+      user_id: appUser.user_id
     };
-
-    console.log('Creating product with:', productData);
 
     const { data, error } = await supabase
       .from('products')
@@ -208,7 +172,7 @@ const ProductContainer = () => {
     );
   }
 
-  if (!authUser ) {
+  if (!authUser) {
     return (
       <IonContent className="ion-padding">
         <IonCard>
@@ -229,7 +193,7 @@ const ProductContainer = () => {
         <IonCardHeader>
           <IonCardTitle>Add New Product</IonCardTitle>
           <IonCardSubtitle>
-            {appUser ?.username ? `Logged in as: ${appUser .username}` : ''}
+            {appUser?.username ? `Logged in as: ${appUser.username}` : ''}
           </IonCardSubtitle>
         </IonCardHeader>
         <IonCardContent>
@@ -296,24 +260,6 @@ const ProductContainer = () => {
                 </IonItem>
               </IonCol>
             </IonRow>
-            <IonRow>
-              <IonCol size="12">
-                <IonItem>
-                  <IonLabel>Product Image</IonLabel>
-                  <input 
-                    type="file" 
-                    onChange={handleImageUpload} 
-                    accept="image/*"
-                    style={{ marginLeft: '10px' }}
-                  />
-                </IonItem>
-                {imageUrl && (
-                  <IonThumbnail style={{ margin: '10px' }}>
-                    <img src={imageUrl} alt="Product preview" />
-                  </IonThumbnail>
-                )}
-              </IonCol>
-            </IonRow>
           </IonGrid>
         </IonCardContent>
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px' }}>
@@ -324,7 +270,6 @@ const ProductContainer = () => {
         </div>
       </IonCard>
 
-      {/* Product list rendering */}
       <IonGrid className="ion-margin-top">
         <IonRow>
           <IonCol>
@@ -343,11 +288,6 @@ const ProductContainer = () => {
               <IonCardHeader>
                 <IonGrid>
                   <IonRow className="ion-align-items-center">
-                    <IonCol size="3">
-                      <IonThumbnail>
-                        <img src={product.image_url} alt={product.product_name} />
-                      </IonThumbnail>
-                    </IonCol>
                     <IonCol>
                       <IonCardTitle>{product.product_name}</IonCardTitle>
                       <IonCardSubtitle>
@@ -355,25 +295,20 @@ const ProductContainer = () => {
                           <IonIcon icon={cash} />
                           ${product.price.toFixed(2)}
                         </IonBadge>
-                        <IonBadge color={product.stock_quantity > 0 ? "success" : "danger"} style={{ marginRight: '6px' }}>
-                          {product.stock_quantity} in stock
+                        <IonBadge color="secondary">
+                          Stock: {product.stock_quantity}
                         </IonBadge>
-                        {product.category && (
-                          <IonBadge color="tertiary">{product.category}</IonBadge>
-                        )}
                       </IonCardSubtitle>
+                      <p>{product.description}</p>
+                    </IonCol>
+                    <IonCol size="1" className="ion-text-right">
+                      <IonButton fill="clear" size="small" color="medium">
+                        <IonIcon icon={pencil} />
+                      </IonButton>
                     </IonCol>
                   </IonRow>
                 </IonGrid>
               </IonCardHeader>
-              <IonCardContent>
-                <IonText>
-                  <p>{product.description}</p>
-                </IonText>
-                <IonText color="medium">
-                  <small>Last updated: {new Date(product.updated_at).toLocaleString()}</small>
-                </IonText>
-              </IonCardContent>
             </IonCard>
           ))
         )}
