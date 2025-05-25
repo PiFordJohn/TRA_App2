@@ -240,7 +240,7 @@ const ProductContainer = () => {
               <IonRow>
                 <IonCol size="12" sizeMd="6">
                   <IonItem>
-                    <IonLabel position="floating">Product Name*</IonLabel>
+                    <IonLabel position="floating">Product Name*</IonLabel><br></br>
                     <IonInput
                       value={productName}
                       onIonChange={e => setProductName(e.detail.value!)}
@@ -250,7 +250,7 @@ const ProductContainer = () => {
                 </IonCol>
                 <IonCol size="12" sizeMd="6">
                   <IonItem>
-                    <IonLabel position="floating">Price*</IonLabel>
+                    <IonLabel position="floating">Price*</IonLabel><br></br>
                     <IonInput
                       type="number"
                       value={price}
@@ -263,7 +263,7 @@ const ProductContainer = () => {
               <IonRow>
                 <IonCol size="12" sizeMd="6">
                   <IonItem>
-                    <IonLabel position="floating">Stock Quantity</IonLabel>
+                    <IonLabel position="floating">Stock Quantity</IonLabel><br></br>
                     <IonInput
                       type="number"
                       value={stockQuantity}
@@ -274,7 +274,7 @@ const ProductContainer = () => {
                 </IonCol>
                 <IonCol size="12" sizeMd="6">
                   <IonItem>
-                    <IonLabel>Category</IonLabel>
+                    <IonLabel>Category</IonLabel><br></br>
                     <IonSelect
                       value={category}
                       onIonChange={e => setCategory(e.detail.value)}
