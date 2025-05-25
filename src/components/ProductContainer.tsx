@@ -41,11 +41,13 @@ const ProductContainer = () => {
   const [categories] = useState<string[]>(['Accessories', 'Clothing', 'Food', 'Drinks', 'Condiments']);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [categoryCounts, setCategoryCounts] = useState<{ category: string; count: number }[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
 
+      // Fetch auth user
       const { data: authUserData, error: authError } = await supabase.auth.getUser();
       if (authError) {
         console.error('Error getting auth user:', authError);
@@ -55,6 +57,7 @@ const ProductContainer = () => {
       const fetchedUser = authUserData?.user ?? null;
       setAuthUser(fetchedUser);
 
+      // Fetch app user info from your users table
       if (fetchedUser?.email) {
         const { data: userData, error: userError } = await supabase
           .from('users')
@@ -73,11 +76,26 @@ const ProductContainer = () => {
         }
       }
 
+      // Fetch product counts per category
+      const { data: allProducts, error: allError } = await supabase
+        .from('products')
+        .select('category');
+
+      if (allError) {
+        console.error('Error fetching all products:', allError);
+      } else if (allProducts) {
+        const counts = categories.map(cat => ({
+          category: cat,
+          count: allProducts.filter(p => p.category === cat).length
+        }));
+        setCategoryCounts(counts);
+      }
+
       setIsLoading(false);
     };
 
     fetchData();
-  }, []);
+  }, [categories]);
 
   const resetForm = () => {
     setProductName('');
@@ -131,7 +149,22 @@ const ProductContainer = () => {
       setAlertMessage('Product created successfully!');
       setIsAlertOpen(true);
       resetForm();
-      setShowAddForm(false); // Hide form after success
+      setShowAddForm(false);
+
+      // Refresh category counts after adding new product
+      const { data: updatedProducts, error: updatedError } = await supabase
+        .from('products')
+        .select('category');
+
+      if (updatedError) {
+        console.error('Error refreshing products:', updatedError);
+      } else if (updatedProducts) {
+        const counts = categories.map(cat => ({
+          category: cat,
+          count: updatedProducts.filter(p => p.category === cat).length
+        }));
+        setCategoryCounts(counts);
+      }
     }
   };
 
@@ -163,20 +196,37 @@ const ProductContainer = () => {
   return (
     <IonContent className="ion-padding">
       {!showAddForm ? (
-        <div style={{ padding: '16px', display: 'flex', justifyContent: 'flex-start', gap: '16px' }}>
-          <IonButton onClick={() => setShowAddForm(true)}>
-            <IonIcon icon={add} slot="start" />
-            Add Product
-          </IonButton>
-          <IonButton color="warning" onClick={() => history.push('/TRA_App2/app/home/ProductListLogs')}>
-            <IonIcon icon={create} slot="start" />
-            Update Product
-          </IonButton>
-          <IonButton color="danger" onClick={() => history.push('/TRA_App2/app/home/ProductListLogs')}>
-            <IonIcon icon={trash} slot="start" />
-            Delete Product
-          </IonButton>
-        </div>
+        <>
+          <div style={{ padding: '16px', display: 'flex', justifyContent: 'flex-start', gap: '16px' }}>
+            <IonButton onClick={() => setShowAddForm(true)}>
+              <IonIcon icon={add} slot="start" />
+              Add Product
+            </IonButton>
+            <IonButton color="warning" onClick={() => history.push('/TRA_App2/app/home/ProductListLogs')}>
+              <IonIcon icon={create} slot="start" />
+              Update Product
+            </IonButton>
+            <IonButton color="danger" onClick={() => history.push('/TRA_App2/app/home/ProductListLogs')}>
+              <IonIcon icon={trash} slot="start" />
+              Delete Product
+            </IonButton>
+          </div>
+
+          <IonGrid>
+            <IonRow>
+              {categoryCounts.map(({ category, count }) => (
+                <IonCol key={category} size="6" sizeMd="4" sizeLg="3" style={{ marginTop: 16 }}>
+                  <IonCard>
+                    <IonCardHeader>
+                      <IonCardTitle>{category}</IonCardTitle>
+                      <IonCardSubtitle>{count} products</IonCardSubtitle>
+                    </IonCardHeader>
+                  </IonCard>
+                </IonCol>
+              ))}
+            </IonRow>
+          </IonGrid>
+        </>
       ) : (
         <IonCard>
           <IonCardHeader>
