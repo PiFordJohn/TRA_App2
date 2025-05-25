@@ -1,47 +1,45 @@
 import { 
-    IonButton,
-    IonButtons,
-      IonContent, 
-      IonHeader,
-      IonIcon, 
-      IonLabel, 
-      IonMenuButton, 
-      IonPage,
-      IonRouterOutlet, 
-      IonTabBar, 
-      IonTabButton, 
-      IonTabs,  
-      IonTitle, 
-      IonToolbar 
-  } from '@ionic/react';
-  import { IonReactRouter } from '@ionic/react-router';
-  import { bookOutline, search, star } from 'ionicons/icons';
-  import { Route, Redirect } from 'react-router';
+  IonButton,
+  IonButtons,
+  IonContent, 
+  IonHeader,
+  IonIcon, 
+  IonLabel, 
+  IonMenuButton, 
+  IonPage,
+  IonRouterOutlet, 
+  IonTabBar, 
+  IonTabButton, 
+  IonTabs,  
+  IonTitle, 
+  IonToolbar 
+} from '@ionic/react';
+import { IonReactRouter } from '@ionic/react-router';
+import { bookOutline, search } from 'ionicons/icons'; 
+import { Route, Redirect } from 'react-router';
 
-  import ProductListLogs from './home-tabs/ProductListLogs';
-  import Products from './home-tabs/Products';
-  import Search from './home-tabs/Search';
-  
-  const Home: React.FC = () => {
-     
-    const tabs = [
-      {name:'Products', tab:'Products',url: '/TRA_App2/app/home/Products', icon: bookOutline},
-      {name:'Search', tab:'search',url: '/TRA_App2/app/home/search', icon: search},
-      {name:'ProductListLogs', tab:'ProductListLogs',url: '/TRA_App2/app/home/ProductListLogs', icon: star},
-      
-    ]
-    return (
-      <IonReactRouter>
-        <IonTabs>
-          <IonTabBar slot="bottom">
-            {tabs.map((item, index) => (
-              <IonTabButton key={index} tab={item.tab} href={item.url}>
-                <IonIcon icon={item.icon} />
-                <IonLabel>{item.name}</IonLabel>
-              </IonTabButton>
-            ))}
-            
-          </IonTabBar>
+import ProductListLogs from './home-tabs/ProductListLogs';
+import Products from './home-tabs/Products';
+import Search from './home-tabs/Search';
+
+const Home: React.FC = () => {
+  const tabs = [
+    { name: 'Products', tab: 'Products', url: '/TRA_App2/app/home/Products', icon: bookOutline },
+    { name: 'Search', tab: 'search', url: '/TRA_App2/app/home/search', icon: search },
+  ];
+
+  return (
+    <IonReactRouter>
+      <IonTabs>
+        <IonTabBar slot="bottom">
+          {tabs.map((item, index) => (
+            <IonTabButton key={index} tab={item.tab} href={item.url}>
+              <IonIcon icon={item.icon} />
+              <IonLabel>{item.name}</IonLabel>
+            </IonTabButton>
+          ))}
+        </IonTabBar>
+
         <IonRouterOutlet>
           <Route exact path="/TRA_App2/app/home/Products" render={Products} />
           <Route exact path="/TRA_App2/app/home/search" render={Search} />
@@ -50,9 +48,9 @@ import {
             <Redirect to="/TRA_App2/app/home/Products" />
           </Route>
         </IonRouterOutlet>
-        </IonTabs>
-      </IonReactRouter>
-    );
-  };
-  
-  export default Home;
+      </IonTabs>
+    </IonReactRouter>
+  );
+};
+
+export default Home;
