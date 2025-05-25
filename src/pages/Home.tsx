@@ -15,17 +15,16 @@ import {
   IonToolbar 
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { bookOutline, search } from 'ionicons/icons'; 
+import { bookOutline,starHalf } from 'ionicons/icons'; 
 import { Route, Redirect } from 'react-router';
 
-import ProductListLogs from './home-tabs/ProductListLogs';
 import Products from './home-tabs/Products';
-import Search from './home-tabs/Search';
+import ProductListLogs from './home-tabs/ProductListLogs';
 
 const Home: React.FC = () => {
   const tabs = [
     { name: 'Products', tab: 'Products', url: '/TRA_App2/app/home/Products', icon: bookOutline },
-    { name: 'Search', tab: 'search', url: '/TRA_App2/app/home/search', icon: search },
+    { name: 'ProductListLogs', tab: 'ProductListLogs', url: '/TRA_App2/app/home/ProductListLogs', icon: starHalf},
   ];
 
   return (
@@ -42,7 +41,7 @@ const Home: React.FC = () => {
 
         <IonRouterOutlet>
           <Route exact path="/TRA_App2/app/home/Products" render={Products} />
-          <Route exact path="/TRA_App2/app/home/search" render={Search} />
+          <Route exact path="/TRA_App2/app/home/ProductListLogs" render={ProductListLogs} />
           <Route exact path="/TRA_App2/app/home/ProductListLogs" render={ProductListLogs} />
           <Route exact path="/TRA_App2/app/home">
             <Redirect to="/TRA_App2/app/home/Products" />
