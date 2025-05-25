@@ -1,16 +1,9 @@
 import { useEffect, useState } from 'react';
-import { 
-  IonContent, 
-  IonHeader, 
-  IonPage, 
-  IonTitle, 
-  IonToolbar, 
-  IonList, 
-  IonItem, 
-  IonLabel, 
-  IonSpinner 
+import {
+  IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
+  IonSpinner, IonGrid, IonRow, IonCol, IonText
 } from '@ionic/react';
-import { supabase } from '../utils/supabaseClient'; // Adjust the import path as necessary
+import { supabase } from '../utils/supabaseClient';
 
 interface Product {
   product_id: string;
@@ -31,7 +24,7 @@ const ProductListContainer: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching products:', error.message);
       } else {
         setProducts(data as Product[]);
       }
@@ -48,23 +41,28 @@ const ProductListContainer: React.FC = () => {
           <IonTitle>Product List</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
+      <IonContent fullscreen className="ion-padding">
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <IonSpinner name="crescent" />
           </div>
+        ) : products.length === 0 ? (
+          <IonText>No products found.</IonText>
         ) : (
-          <IonList>
+          <IonGrid>
+            <IonRow>
+              <IonCol><strong>Name</strong></IonCol>
+              <IonCol><strong>Price</strong></IonCol>
+              <IonCol><strong>Stock</strong></IonCol>
+            </IonRow>
             {products.map(product => (
-              <IonItem key={product.product_id}>
-                <IonLabel>
-                  <h2>{product.product_name}</h2>
-                  <p>Price: ${product.price.toFixed(2)}</p>
-                  <p>Stock: {product.stock_quantity}</p>
-                </IonLabel>
-              </IonItem>
+              <IonRow key={product.product_id}>
+                <IonCol>{product.product_name}</IonCol>
+                <IonCol>${product.price.toFixed(2)}</IonCol>
+                <IonCol>{product.stock_quantity}</IonCol>
+              </IonRow>
             ))}
-          </IonList>
+          </IonGrid>
         )}
       </IonContent>
     </IonPage>

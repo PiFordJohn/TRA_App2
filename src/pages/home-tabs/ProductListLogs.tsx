@@ -7,6 +7,7 @@ import {
   IonTitle, 
   IonToolbar 
 } from '@ionic/react';
+import ProductListContainer from '../../components/ProductListContainer'; // ✅ adjust the path
 
 const ProductListLogs: React.FC = () => {
   return (
@@ -14,22 +15,14 @@ const ProductListLogs: React.FC = () => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot='start'>
-            <IonMenuButton></IonMenuButton>
+            <IonMenuButton />
           </IonButtons>
           <IonTitle>Product List Logs</IonTitle>
         </IonToolbar>
       </IonHeader>
+
       <IonContent fullscreen>
-        <div 
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-          }}
-        >
-          Product List Logs
-        </div>
+        <ProductListContainer /> {/* ✅ Add this to show the product data */}
       </IonContent>
     </IonPage>
   );
