@@ -125,36 +125,39 @@ const ProductListContainer: React.FC = () => {
         ) : (
           Object.entries(groupedByCategory).map(([category, categoryProducts]) => (
             <div key={category} style={{ marginBottom: '2rem' }}>
-              <h2>{category}</h2>
-              <IonGrid>
-                <IonRow>
-                  <IonCol><strong>Name</strong></IonCol>
-                  <IonCol><strong>Price</strong></IonCol>
-                  <IonCol><strong>Stock</strong></IonCol>
-                  <IonCol><strong>Last Updated</strong></IonCol>
-                  <IonCol><strong>Actions</strong></IonCol>
-                </IonRow>
-                {categoryProducts.map(product => (
-                  <IonRow key={product.product_id}>
-                    <IonCol>{product.product_name}</IonCol>
-                    <IonCol>${product.price.toFixed(2)}</IonCol>
-                    <IonCol>{product.stock_quantity}</IonCol>
-                    <IonCol>{product.updated_at ? new Date(product.updated_at).toLocaleString() : 'N/A'}</IonCol>
-                    <IonCol>
-                      <IonButton size="small" onClick={() => setEditProduct(product)}>Update</IonButton>
-                      <IonButton size="small" color="danger" onClick={() => {
-                        setProductToDelete(product.product_id);
-                        setShowDeleteModal(true);
-                      }}>Delete</IonButton>
-                    </IonCol>
-                  </IonRow>
-                ))}
-              </IonGrid>
+              <IonText color="primary">
+                <h2>{category}</h2>
+              </IonText>
+              {categoryProducts.map(product => (
+                <IonCard key={product.product_id}>
+                  <IonCardContent>
+                    <IonGrid>
+                      <IonRow>
+                        <IonCol size="6"><strong>Name:</strong> {product.product_name}</IonCol>
+                        <IonCol size="6"><strong>Price:</strong> ${product.price.toFixed(2)}</IonCol>
+                      </IonRow>
+                      <IonRow>
+                        <IonCol size="6"><strong>Stock:</strong> {product.stock_quantity}</IonCol>
+                        <IonCol size="6"><strong>Updated:</strong> {product.updated_at ? new Date(product.updated_at).toLocaleString() : 'N/A'}</IonCol>
+                      </IonRow>
+                      <IonRow>
+                        <IonCol>
+                          <IonButton size="small" onClick={() => setEditProduct(product)}>Update</IonButton>
+                          <IonButton size="small" color="danger" onClick={() => {
+                            setProductToDelete(product.product_id);
+                            setShowDeleteModal(true);
+                          }}>Delete</IonButton>
+                        </IonCol>
+                      </IonRow>
+                    </IonGrid>
+                  </IonCardContent>
+                </IonCard>
+              ))}
             </div>
           ))
         )}
 
-        {/* Floating Edit Card with backdrop */}
+        {/* Edit Product Modal */}
         {editProduct && (
           <>
             <div style={{
@@ -171,26 +174,25 @@ const ProductListContainer: React.FC = () => {
               transform: 'translate(-50%, -50%)',
               zIndex: 999,
               width: '90%',
-              maxWidth: '400px',
-              transition: 'opacity 0.3s ease-in-out'
+              maxWidth: '400px'
             }}>
               <IonCard>
                 <IonCardContent>
                   <h3 style={{ textAlign: 'center' }}>Edit Product</h3>
                   <IonItem>
-                    <IonLabel position="floating">Product Name</IonLabel><br></br>
+                    <IonLabel position="floating">Product Name</IonLabel>
                     <IonInput value={editProduct.product_name} onIonChange={e => handleEditChange('product_name', e.detail.value!)} />
                   </IonItem>
                   <IonItem>
-                    <IonLabel position="floating">Price</IonLabel><br></br>
+                    <IonLabel position="floating">Price</IonLabel>
                     <IonInput type="number" value={editProduct.price} onIonChange={e => handleEditChange('price', parseFloat(e.detail.value!))} />
                   </IonItem>
                   <IonItem>
-                    <IonLabel position="floating">Stock Quantity</IonLabel><br></br>
+                    <IonLabel position="floating">Stock Quantity</IonLabel>
                     <IonInput type="number" value={editProduct.stock_quantity} onIonChange={e => handleEditChange('stock_quantity', parseInt(e.detail.value!))} />
                   </IonItem>
                   <IonItem>
-                    <IonLabel position="floating">Category</IonLabel><br></br>
+                    <IonLabel position="floating">Category</IonLabel>
                     <IonInput value={editProduct.category ?? ''} onIonChange={e => handleEditChange('category', e.detail.value!)} />
                   </IonItem>
                   <IonButton expand="block" onClick={handleSaveEdit}>Save Changes</IonButton>
@@ -201,7 +203,7 @@ const ProductListContainer: React.FC = () => {
           </>
         )}
 
-        {/* Delete Modal */}
+        {/* Delete Confirmation Modal */}
         <IonModal isOpen={showDeleteModal} onDidDismiss={() => setShowDeleteModal(false)}>
           <IonCard>
             <IonCardContent>
