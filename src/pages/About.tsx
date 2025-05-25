@@ -1,47 +1,50 @@
-import { 
-    IonButtons,
-      IonCard,
-      IonCardContent,
-      IonCardHeader,
-      IonCardSubtitle,
-      IonCardTitle,
-      IonContent, 
-      IonHeader, 
-      IonImg, 
-      IonMenuButton, 
-      IonPage, 
-      IonTitle, 
-      IonToolbar 
-  } from '@ionic/react';
-  import warcraft1 from '../../img/warcraft1.jpg';
-  
-  const About: React.FC = () => {
-    return (
-      <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonButtons slot='start'>
-              <IonMenuButton></IonMenuButton>
-            </IonButtons>
-            <IonTitle>About</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent className='ion-padding'>
-        <IonCard className="profile-card">
-        <IonImg src={warcraft1} alt="WARCRAFT" />
-      <IonCardHeader>
-        <IonCardTitle>WarCraft</IonCardTitle>
-        <IonCardSubtitle></IonCardSubtitle>
-      </IonCardHeader>
+import {
+  IonButtons,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardSubtitle,
+  IonCardTitle,
+  IonContent,
+  IonHeader,
+  IonImg,
+  IonMenuButton,
+  IonPage,
+  IonTitle,
+  IonToolbar
+} from '@ionic/react';
+import touristImg from '../../img/logo2.jpg'; // you can change this to a more relevant image later
 
-      <IonCardContent>This epic fantasy artwork depicts a powerful, armored warrior slamming a massive,
-         rune-engraved sword into a monstrous foe. With a fierce expression and a flowing red cape, 
-         the warrior radiates strength and defiance as ghostly figures loom in the background. 
-        The scene captures the climax of a brutal battle between light and darkness.</IonCardContent>
-    </IonCard>
-        </IonContent>
-      </IonPage>
-    );
-  };
-  
-  export default About;
+const About: React.FC = () => {
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonMenuButton />
+          </IonButtons>
+          <IonTitle>About</IonTitle>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="ion-padding">
+        <IonCard className="profile-card">
+          <IonImg src={touristImg} alt="Tourist Rest Area" />
+          <IonCardHeader>
+            <IonCardTitle>Product Management App</IonCardTitle>
+            <IonCardSubtitle>Tourist Rest Area – Manolo Fortich</IonCardSubtitle>
+          </IonCardHeader>
+
+          <IonCardContent>
+            This Product Management App is designed to support the operations of the Tourist Rest Area in Manolo Fortich, Bukidnon.
+            It helps manage inventory, categories, suppliers, and product stock in real-time with a clean and responsive interface.
+            <br /><br />
+            The system began operation in <strong>August 2023</strong> and continues to evolve as part of the digitalization of local tourism infrastructure. 
+            With a focus on user-friendly functionality and real-time updates via Supabase, it serves as an essential tool for administrators and staff managing product logistics in the area.
+          </IonCardContent>
+        </IonCard>
+      </IonContent>
+    </IonPage>
+  );
+};
+
+export default About;
