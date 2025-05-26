@@ -21,5 +21,3 @@ const Products: React.FC = () => {
 
 export default Products;
 
-// If you need to export Feed, use a named export instead:
-// export { Feed };

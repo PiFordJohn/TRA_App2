@@ -7,7 +7,7 @@ import {
   IonTitle, 
   IonToolbar 
 } from '@ionic/react';
-import ProductListContainer from '../../components/ProductListContainer'; // ✅ adjust the path
+import ProductListContainer from '../../components/ProductListContainer';
 
 const ProductListLogs: React.FC = () => {
   return (
