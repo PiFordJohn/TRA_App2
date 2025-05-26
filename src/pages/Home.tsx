@@ -39,13 +39,14 @@ const Home: React.FC = () => {
           ))}
         </IonTabBar>
 
-        <IonRouterOutlet>
-          <Route exact path="/TRA_App2/app/home/Products" render={Products} />
-          <Route exact path="/TRA_App2/app/home/ProductListLogs" render={ProductListLogs} />
-          <Route exact path="/TRA_App2/app/home">
-            <Redirect to="/TRA_App2/app/home/Products" />
-          </Route>
-        </IonRouterOutlet>
+       <IonRouterOutlet>
+    <Route exact path="/TRA_App2/app/home/Products" component={Products} />
+    <Route exact path="/TRA_App2/app/home/ProductListLogs" component={ProductListLogs} />
+    <Route exact path="/TRA_App2/app/home">
+    <Redirect to="/TRA_App2/app/home/Products" />
+    </Route>
+   </IonRouterOutlet>
+
       </IonTabs>
     </IonReactRouter>
   );
