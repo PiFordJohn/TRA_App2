@@ -18,6 +18,8 @@ interface Product {
   category: string | null;
   created_at: string;
   updated_at: string;
+  batchdate: string;        // new
+  expirationdate: string | null;  // new
 }
 
 interface AppUser {
@@ -34,6 +36,8 @@ const ProductContainer = () => {
   const [price, setPrice] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
   const [category, setCategory] = useState<string | null>(null);
+  const [batchDate, setBatchDate] = useState('');
+  const [expirationDate, setExpirationDate] = useState('');
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -103,6 +107,8 @@ const ProductContainer = () => {
     setPrice('');
     setStockQuantity('');
     setCategory(null);
+    setBatchDate('');
+    setExpirationDate('');
   };
 
   const createProduct = async () => {
@@ -114,6 +120,12 @@ const ProductContainer = () => {
 
     if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
       setAlertMessage('Please enter a valid price');
+      setIsAlertOpen(true);
+      return;
+    }
+
+    if (!batchDate) {
+      setAlertMessage('Batch date is required');
       setIsAlertOpen(true);
       return;
     }
@@ -130,7 +142,9 @@ const ProductContainer = () => {
       price: parseFloat(price),
       stock_quantity: stockQuantity ? parseInt(stockQuantity) : 0,
       category: category ? category : null,
-      user_id: appUser.user_id
+      user_id: appUser.user_id,
+      batchdate: batchDate,
+      expirationdate: expirationDate || null
     };
 
     const { data, error } = await supabase
@@ -255,6 +269,7 @@ const ProductContainer = () => {
                   </IonItem>
                 </IonCol>
               </IonRow>
+
               <IonRow>
                 <IonCol size="12" sizeMd="6">
                   <IonItem>
@@ -282,6 +297,33 @@ const ProductContainer = () => {
                   </IonItem>
                 </IonCol>
               </IonRow>
+
+              {/* New Batch Date and Expiration Date inputs */}
+              <IonRow>
+                <IonCol size="12" sizeMd="6">
+                  <IonItem>
+                    <IonLabel position="floating">Batch Date*</IonLabel><br></br>
+                    <IonInput
+                      type="date"
+                      value={batchDate}
+                      onIonChange={e => setBatchDate(e.detail.value!)}
+                      placeholder="Select batch date"
+                    />
+                  </IonItem>
+                </IonCol>
+                <IonCol size="12" sizeMd="6">
+                  <IonItem>
+                    <IonLabel position="floating">Expiration Date</IonLabel><br></br>
+                    <IonInput
+                      type="date"
+                      value={expirationDate}
+                      onIonChange={e => setExpirationDate(e.detail.value!)}
+                      placeholder="Select expiration date (optional)"
+                    />
+                  </IonItem>
+                </IonCol>
+              </IonRow>
+
               <IonRow>
                 <IonCol size="12">
                   <IonItem>

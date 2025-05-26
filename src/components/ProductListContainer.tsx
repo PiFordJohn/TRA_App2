@@ -15,6 +15,8 @@ interface Product {
   stock_quantity: number;
   updated_at: string;
   category: string | null;
+  batchdate?: string | null;
+  expirationdate?: string | null;
 }
 
 const ProductListContainer: React.FC = () => {
@@ -124,36 +126,42 @@ const ProductListContainer: React.FC = () => {
           <IonText>No products found.</IonText>
         ) : (
           Object.entries(groupedByCategory).map(([category, categoryProducts]) => (
-            <div key={category} style={{ marginBottom: '2rem' }}>
-              <IonText color="primary">
-                <h2>{category}</h2>
-              </IonText>
-              {categoryProducts.map(product => (
-                <IonCard key={product.product_id}>
-                  <IonCardContent>
-                    <IonGrid>
-                      <IonRow>
-                        <IonCol size="6"><strong>Name:</strong> {product.product_name}</IonCol>
-                        <IonCol size="6"><strong>Price:</strong> ${product.price.toFixed(2)}</IonCol>
-                      </IonRow>
-                      <IonRow>
-                        <IonCol size="6"><strong>Stock:</strong> {product.stock_quantity}</IonCol>
-                        <IonCol size="6"><strong>Updated:</strong> {product.updated_at ? new Date(product.updated_at).toLocaleString() : 'N/A'}</IonCol>
-                      </IonRow>
-                      <IonRow>
-                        <IonCol>
-                          <IonButton size="small" onClick={() => setEditProduct(product)}>Update</IonButton>
-                          <IonButton size="small" color="danger" onClick={() => {
-                            setProductToDelete(product.product_id);
-                            setShowDeleteModal(true);
-                          }}>Delete</IonButton>
-                        </IonCol>
-                      </IonRow>
-                    </IonGrid>
-                  </IonCardContent>
-                </IonCard>
-              ))}
-            </div>
+            <IonCard key={category} style={{ marginBottom: '2rem' }}>
+              <IonCardContent>
+                <IonText color="primary">
+                  <h2>{category}</h2>
+                </IonText>
+                {categoryProducts.map(product => (
+                  <IonCard key={product.product_id} style={{ marginTop: '1rem' }}>
+                    <IonCardContent>
+                      <IonGrid>
+                        <IonRow>
+                          <IonCol size="6"><strong>Name:</strong> {product.product_name}</IonCol>
+                          <IonCol size="6"><strong>Price:</strong> ${product.price.toFixed(2)}</IonCol>
+                        </IonRow>
+                        <IonRow>
+                          <IonCol size="6"><strong>Stock:</strong> {product.stock_quantity}</IonCol>
+                          <IonCol size="6"><strong>Updated:</strong> {product.updated_at ? new Date(product.updated_at).toLocaleString() : 'N/A'}</IonCol>
+                        </IonRow>
+                        <IonRow>
+                          <IonCol size="6"><strong>Batch Date:</strong> {product.batchdate ? new Date(product.batchdate).toLocaleDateString() : 'N/A'}</IonCol>
+                          <IonCol size="6"><strong>Expiration Date:</strong> {product.expirationdate ? new Date(product.expirationdate).toLocaleDateString() : 'N/A'}</IonCol>
+                        </IonRow>
+                        <IonRow>
+                          <IonCol>
+                            <IonButton size="small" onClick={() => setEditProduct(product)}>Update</IonButton>
+                            <IonButton size="small" color="danger" onClick={() => {
+                              setProductToDelete(product.product_id);
+                              setShowDeleteModal(true);
+                            }}>Delete</IonButton>
+                          </IonCol>
+                        </IonRow>
+                      </IonGrid>
+                    </IonCardContent>
+                  </IonCard>
+                ))}
+              </IonCardContent>
+            </IonCard>
           ))
         )}
 
@@ -194,6 +202,14 @@ const ProductListContainer: React.FC = () => {
                   <IonItem>
                     <IonLabel position="floating">Category</IonLabel>
                     <IonInput value={editProduct.category ?? ''} onIonChange={e => handleEditChange('category', e.detail.value!)} />
+                  </IonItem>
+                  <IonItem>
+                    <IonLabel position="floating">Batch Date</IonLabel>
+                    <IonInput type="date" value={editProduct.batchdate ? editProduct.batchdate.split('T')[0] : ''} onIonChange={e => handleEditChange('batchdate', e.detail.value!)} />
+                  </IonItem>
+                  <IonItem>
+                    <IonLabel position="floating">Expiration Date</IonLabel>
+                    <IonInput type="date" value={editProduct.expirationdate ? editProduct.expirationdate.split('T')[0] : ''} onIonChange={e => handleEditChange('expirationdate', e.detail.value!)} />
                   </IonItem>
                   <IonButton expand="block" onClick={handleSaveEdit}>Save Changes</IonButton>
                   <IonButton expand="block" color="medium" onClick={() => setEditProduct(null)}>Cancel</IonButton>
