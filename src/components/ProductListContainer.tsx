@@ -25,6 +25,8 @@ const ProductListContainer: React.FC = () => {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [userPassword, setUserPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const fetchProducts = async () => {
     const { data, error } = await supabase
@@ -81,11 +83,36 @@ const ProductListContainer: React.FC = () => {
     event.detail.complete();
   };
 
-  const handleDeleteProduct = async () => {
-    if (!productToDelete) return;
-    await supabase.from('products').delete().eq('product_id', productToDelete);
+  const handleVerifyAndDelete = async () => {
+    setPasswordError('');
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || !user.email) {
+      setPasswordError('User not authenticated.');
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: userPassword,
+    });
+
+    if (error) {
+      setPasswordError('Incorrect password.');
+      return;
+    }
+
+    if (productToDelete) {
+      await supabase.from('products').delete().eq('product_id', productToDelete);
+    }
+
     setShowDeleteModal(false);
     setProductToDelete(null);
+    setUserPassword('');
+    setPasswordError('');
   };
 
   const handleEditChange = (field: keyof Product, value: any) => {
@@ -165,7 +192,7 @@ const ProductListContainer: React.FC = () => {
           ))
         )}
 
-        {/* Edit Product Modal */}
+        {/* Edit Modal */}
         {editProduct && (
           <>
             <div style={{
@@ -219,13 +246,30 @@ const ProductListContainer: React.FC = () => {
           </>
         )}
 
-        {/* Delete Confirmation Modal */}
+        {/* Delete with Password Modal */}
         <IonModal isOpen={showDeleteModal} onDidDismiss={() => setShowDeleteModal(false)}>
           <IonCard>
             <IonCardContent>
-              <p>Are you sure you want to delete this product?</p>
-              <IonButton color="danger" expand="block" onClick={handleDeleteProduct}>Yes, Delete</IonButton>
-              <IonButton expand="block" onClick={() => setShowDeleteModal(false)}>Cancel</IonButton>
+              <p>To confirm deletion, enter your password:</p>
+              <IonItem>
+                <IonLabel position="floating">Password</IonLabel>
+                <IonInput
+                  type="password"
+                  value={userPassword}
+                  onIonChange={e => setUserPassword(e.detail.value!)}
+                />
+              </IonItem>
+              {passwordError && (
+                <IonText color="danger">
+                  <p>{passwordError}</p>
+                </IonText>
+              )}
+              <IonButton color="danger" expand="block" onClick={handleVerifyAndDelete}>Yes, Delete</IonButton>
+              <IonButton expand="block" onClick={() => {
+                setShowDeleteModal(false);
+                setUserPassword('');
+                setPasswordError('');
+              }}>Cancel</IonButton>
             </IonCardContent>
           </IonCard>
         </IonModal>
