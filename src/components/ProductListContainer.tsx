@@ -227,7 +227,7 @@ const ProductListContainer = () => {
         </IonHeader>
         <IonContent className="ion-padding">
           <IonItem>
-            <IonLabel position="floating">Product Name</IonLabel>
+            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Product Name</IonLabel><br></br>
             <IonInput
               value={editForm.product_name}
               onIonChange={(e) => setEditForm({ ...editForm, product_name: e.detail.value! })}
@@ -235,7 +235,7 @@ const ProductListContainer = () => {
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating">Description</IonLabel>
+            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Description</IonLabel><br></br>
             <IonInput
               value={editForm.description}
               onIonChange={(e) => setEditForm({ ...editForm, description: e.detail.value! })}
@@ -243,7 +243,7 @@ const ProductListContainer = () => {
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating">Price</IonLabel>
+            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Price</IonLabel><br></br>
             <IonInput
               type="number"
               value={editForm.price}
@@ -254,7 +254,7 @@ const ProductListContainer = () => {
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating">Stock Quantity</IonLabel>
+            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Stock Quantity</IonLabel><br></br>
             <IonInput
               type="number"
               value={editForm.stock_quantity}
@@ -265,7 +265,7 @@ const ProductListContainer = () => {
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating">Category</IonLabel>
+            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Category</IonLabel><br></br>
             <IonInput
               value={editForm.category}
               onIonChange={(e) => setEditForm({ ...editForm, category: e.detail.value! })}
@@ -273,7 +273,7 @@ const ProductListContainer = () => {
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating">Batch Date</IonLabel>
+            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Batch Date</IonLabel><br></br>
             <IonInput
               type="date"
               value={editForm.batchdate}
@@ -282,7 +282,7 @@ const ProductListContainer = () => {
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating">Expiration Date</IonLabel>
+            <IonLabel position="floating" style={{ fontStyle: 'italic' }}>Expiration Date</IonLabel><br></br>
             <IonInput
               type="date"
               value={editForm.expirationdate}
