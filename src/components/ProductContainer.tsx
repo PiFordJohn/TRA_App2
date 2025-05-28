@@ -7,6 +7,7 @@ import { useHistory } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabaseClient';
 import { add } from 'ionicons/icons';
+import { toBePartiallyChecked } from '@testing-library/jest-dom/matchers';
 
 interface Product {
   product_id: string;
@@ -47,80 +48,106 @@ const ProductContainer = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [categoryCounts, setCategoryCounts] = useState<{ category: string; count: number }[]>([]);
 
-  // New states for summary counts
+  // Summary counts and product lists for modal display
   const [expiredCount, setExpiredCount] = useState(0);
   const [outOfStockCount, setOutOfStockCount] = useState(0);
   const [needRestockCount, setNeedRestockCount] = useState(0);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+  const [expiredProducts, setExpiredProducts] = useState<Product[]>([]);
+  const [outOfStockProducts, setOutOfStockProducts] = useState<Product[]>([]);
+  const [needRestockProducts, setNeedRestockProducts] = useState<Product[]>([]);
 
-      // Fetch auth user
-      const { data: authUserData, error: authError } = await supabase.auth.getUser();
-      if (authError) {
-        console.error('Error getting auth user:', authError);
+  // Function to load products and update counts + lists
+  const loadProductData = async () => {
+    setIsLoading(true);
+
+    // Get auth user
+    const { data: authUserData, error: authError } = await supabase.auth.getUser();
+    if (authError) {
+      console.error('Error getting auth user:', authError);
+      setIsLoading(false);
+      return;
+    }
+    const fetchedUser = authUserData?.user ?? null;
+    setAuthUser(fetchedUser);
+
+    // Get app user
+    if (fetchedUser?.email) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('user_email', fetchedUser.email)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching app user:', userError);
         setIsLoading(false);
         return;
       }
-      const fetchedUser = authUserData?.user ?? null;
-      setAuthUser(fetchedUser);
 
-      // Fetch app user info from your users table
-      if (fetchedUser?.email) {
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('user_email', fetchedUser.email)
-          .single();
-
-        if (userError) {
-          console.error('Error fetching app user:', userError);
-          setIsLoading(false);
-          return;
-        }
-
-        if (userData) {
-          setAppUser(userData as AppUser);
-        }
+      if (userData) {
+        setAppUser(userData as AppUser);
       }
+    }
 
-      // Fetch all products with needed fields
-      const { data: allProducts, error: allError } = await supabase
-        .from('products')
-        .select('category, stock_quantity, expirationdate');
+    // Fetch all products with needed fields
+    const { data: allProducts, error: allError } = await supabase
+      .from('products')
+      .select('*'); // get all fields so we can show names
 
-      if (allError) {
-        console.error('Error fetching all products:', allError);
-      } else if (allProducts) {
-        // Calculate category counts
-        const counts = categories.map(cat => ({
-          category: cat,
-          count: allProducts.filter(p => p.category === cat).length
-        }));
-        setCategoryCounts(counts);
+    if (allError) {
+      console.error('Error fetching all products:', allError);
+    } else if (allProducts) {
+      // Calculate category counts
+      const counts = categories.map(cat => ({
+        category: cat,
+        count: allProducts.filter((p: Product) => p.category === cat).length
+      }));
+      setCategoryCounts(counts);
 
-        // Calculate expired, out of stock, and need restock counts
-        const today = new Date();
+      const today = new Date();
 
-        const expired = allProducts.filter(p => {
-          if (!p.expirationdate) return false;
-          return new Date(p.expirationdate) < today;
-        }).length;
+      // Expired products
+      const expiredList = allProducts.filter((p: Product) => {
+        if (!p.expirationdate) return false;
+        return new Date(p.expirationdate) < today;
+      });
+      setExpiredProducts(expiredList);
+      setExpiredCount(expiredList.length);
 
-        const outOfStock = allProducts.filter(p => p.stock_quantity === 0).length;
+      // Out of stock products
+      const outOfStockList = allProducts.filter((p: Product) => p.stock_quantity === 0);
+      setOutOfStockProducts(outOfStockList);
+      setOutOfStockCount(outOfStockList.length);
 
-        const needRestock = allProducts.filter(p => p.stock_quantity > 0 && p.stock_quantity < 5).length;
+      // Need restock products (stock > 0 but < 5)
+      const needRestockList = allProducts.filter((p: Product) => p.stock_quantity > 0 && p.stock_quantity < 5);
+      setNeedRestockProducts(needRestockList);
+      setNeedRestockCount(needRestockList.length);
+    }
 
-        setExpiredCount(expired);
-        setOutOfStockCount(outOfStock);
-        setNeedRestockCount(needRestock);
-      }
+    setIsLoading(false);
+  };
 
-      setIsLoading(false);
+  useEffect(() => {
+    loadProductData();
+
+    // Setup realtime subscription for changes on products table
+    const productSubscription = supabase
+      .channel('public:products')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          loadProductData(); // refresh data on any product insert/update/delete
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(productSubscription);
     };
-
-    fetchData();
   }, [categories]);
 
   const resetForm = () => {
@@ -186,37 +213,36 @@ const ProductContainer = () => {
       setIsAlertOpen(true);
       resetForm();
       setShowAddForm(false);
-
-      // Refresh category counts and summaries after adding new product
-      const { data: updatedProducts, error: updatedError } = await supabase
-        .from('products')
-        .select('category, stock_quantity, expirationdate');
-
-      if (updatedError) {
-        console.error('Error refreshing products:', updatedError);
-      } else if (updatedProducts) {
-        const counts = categories.map(cat => ({
-          category: cat,
-          count: updatedProducts.filter(p => p.category === cat).length
-        }));
-        setCategoryCounts(counts);
-
-        const today = new Date();
-
-        const expired = updatedProducts.filter(p => {
-          if (!p.expirationdate) return false;
-          return new Date(p.expirationdate) < today;
-        }).length;
-
-        const outOfStock = updatedProducts.filter(p => p.stock_quantity === 0).length;
-
-        const needRestock = updatedProducts.filter(p => p.stock_quantity > 0 && p.stock_quantity < 5).length;
-
-        setExpiredCount(expired);
-        setOutOfStockCount(outOfStock);
-        setNeedRestockCount(needRestock);
-      }
+      // loadProductData() will be called automatically by realtime subscription
     }
+  };
+
+  // Handle alert display for product lists when user clicks the summary cards
+  const handleSummaryClick = (type: 'expired' | 'outOfStock' | 'needRestock') => {
+    let products: Product[] = [];
+    let title = '';
+    switch (type) {
+      case 'expired':
+        products = expiredProducts;
+        title = 'Expired Products';
+        break;
+      case 'outOfStock':
+        products = outOfStockProducts;
+        title = 'Out of Stock Products';
+        break;
+      case 'needRestock':
+        products = needRestockProducts;
+        title = 'Products Need Restocking';
+        break;
+    }
+
+    if (products.length === 0) {
+      setAlertMessage('Nothing to display.');
+    } else {
+      // List product names separated by commas
+      setAlertMessage(products.map(p => p.product_name).join(', '));
+    }
+    setIsAlertOpen(true);
   };
 
   if (isLoading) {
@@ -273,53 +299,50 @@ const ProductContainer = () => {
             </IonRow>
           </IonGrid>
 
-          {/* New summary cards for expired, out of stock, restock */}
+          {/* Summary cards now act as buttons */}
           <IonGrid>
             <IonRow>
               <IonCol size="12" sizeMd="4" style={{ marginTop: 16 }}>
-                <IonCard color="danger">
-                  <IonCardHeader>
-                    <IonCardTitle>Expired Products</IonCardTitle>
-                  </IonCardHeader>
-                  <IonCardContent>
-                    <IonText>{expiredCount}</IonText>
-                  </IonCardContent>
-                </IonCard>
+                <IonButton
+                  expand="block"
+                  color="danger"
+                  onClick={() => handleSummaryClick('expired')}
+                >
+                  <IonCardTitle>Expired Products</IonCardTitle>
+                  <IonCardSubtitle color="light">{expiredCount}</IonCardSubtitle>
+                </IonButton>
               </IonCol>
               <IonCol size="12" sizeMd="4" style={{ marginTop: 16 }}>
-                <IonCard color="medium">
-                  <IonCardHeader>
-                    <IonCardTitle>Out of Stocks</IonCardTitle>
-                  </IonCardHeader>
-                  <IonCardContent>
-                    <IonText>{outOfStockCount}</IonText>
-                  </IonCardContent>
-                </IonCard>
+                <IonButton
+                  expand="block"
+                  color="medium"
+                  onClick={() => handleSummaryClick('outOfStock')}
+                >
+                  <IonCardTitle>Out of Stocks</IonCardTitle>
+                  <IonCardSubtitle color="light">{outOfStockCount}</IonCardSubtitle>
+                </IonButton>
               </IonCol>
               <IonCol size="12" sizeMd="4" style={{ marginTop: 16 }}>
-                <IonCard color="warning">
-                  <IonCardHeader>
-                    <IonCardTitle>Need for Restocking</IonCardTitle>
-                  </IonCardHeader>
-                  <IonCardContent>
-                    <IonText>{needRestockCount}</IonText>
-                  </IonCardContent>
-                </IonCard>
+                <IonButton
+                  expand="block"
+                  color="warning"
+                  onClick={() => handleSummaryClick('needRestock')}
+                >
+                  <IonCardTitle>Need for Restocking</IonCardTitle>
+                  <IonCardSubtitle color="light">{needRestockCount}</IonCardSubtitle>
+                </IonButton>
               </IonCol>
             </IonRow>
           </IonGrid>
         </>
       ) : (
-        <IonCard>
+           <IonCard>
           <IonCardHeader>
             <IonCardTitle>Add New Product</IonCardTitle>
-            <IonCardSubtitle>
-              {appUser?.username ? `Logged in as: ${appUser.username}` : ''}
-            </IonCardSubtitle>
           </IonCardHeader>
-                    <IonCardContent>
+          <IonCardContent>
             <IonItem>
-              <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Product Name *</IonLabel><br></br>
+              <IonLabel position="floating">Product Name*</IonLabel>
               <IonInput
                 value={productName}
                 onIonChange={e => setProductName(e.detail.value!)}
@@ -328,7 +351,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Description</IonLabel><br></br>
+              <IonLabel position="floating">Description</IonLabel>
               <IonInput
                 value={description}
                 onIonChange={e => setDescription(e.detail.value!)}
@@ -336,7 +359,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Price *</IonLabel><br></br>
+              <IonLabel position="floating">Price*</IonLabel>
               <IonInput
                 type="number"
                 value={price}
@@ -348,13 +371,12 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Stock Quantity</IonLabel><br></br>
+              <IonLabel position="floating">Stock Quantity</IonLabel>
               <IonInput
                 type="number"
                 value={stockQuantity}
                 onIonChange={e => setStockQuantity(e.detail.value!)}
                 min="0"
-                step="1"
               />
             </IonItem>
 
@@ -374,7 +396,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Batch Date *</IonLabel><br></br>
+              <IonLabel position="floating">Batch Date*</IonLabel>
               <IonInput
                 type="date"
                 value={batchDate}
@@ -384,7 +406,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Expiration Date</IonLabel><br></br>
+              <IonLabel position="floating">Expiration Date</IonLabel>
               <IonInput
                 type="date"
                 value={expirationDate}
@@ -392,18 +414,10 @@ const ProductContainer = () => {
               />
             </IonItem>
 
-            <IonButton expand="block" onClick={createProduct} style={{ marginTop: 20 }}>
-              Save Product
+            <IonButton expand="block" onClick={createProduct} style={{ marginTop: 16 }}>
+              Create Product
             </IonButton>
-            <IonButton
-              expand="block"
-              color="medium"
-              onClick={() => {
-                setShowAddForm(false);
-                resetForm();
-              }}
-              style={{ marginTop: 10 }}
-            >
+            <IonButton expand="block" color="medium" onClick={() => setShowAddForm(false)} style={{ marginTop: 8 }}>
               Cancel
             </IonButton>
           </IonCardContent>
@@ -413,7 +427,7 @@ const ProductContainer = () => {
       <IonAlert
         isOpen={isAlertOpen}
         onDidDismiss={() => setIsAlertOpen(false)}
-        header={'Notice'}
+        header="Info"
         message={alertMessage}
         buttons={['OK']}
       />
