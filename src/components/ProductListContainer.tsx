@@ -1,74 +1,54 @@
+import { useState, useEffect } from 'react';
 import {
-  IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
-  IonSpinner, IonGrid, IonRow, IonCol, IonText,
-  IonRefresher, IonRefresherContent, IonButton, IonCard, IonCardContent,
-  IonModal, IonInput, IonItem, IonLabel
+  IonContent, IonCard, IonCardHeader, IonCardTitle, IonCardSubtitle,
+  IonCardContent, IonGrid, IonRow, IonCol, IonButton, IonIcon, IonSpinner
 } from '@ionic/react';
-import { RefresherEventDetail } from '@ionic/core';
-import { useEffect, useState } from 'react';
+import { pencil, trash } from 'ionicons/icons';
 import { supabase } from '../utils/supabaseClient';
 
 interface Product {
   product_id: string;
   product_name: string;
+  description: string | null;
   price: number;
   stock_quantity: number;
-  updated_at: string;
   category: string | null;
-  batchdate?: string | null;
-  expirationdate?: string | null;
+  batchdate: string;
+  expirationdate: string | null;
+  created_at: string;
 }
 
-const ProductListContainer: React.FC = () => {
+const ProductListContainer = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
-  const [userPassword, setUserPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchProducts = async () => {
+    setIsLoading(true);
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .order('category', { ascending: true })
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching products:', error.message);
+      console.error('Error fetching products:', error);
     } else {
       setProducts(data as Product[]);
     }
-    setLoading(false);
+    setIsLoading(false);
   };
 
   useEffect(() => {
     fetchProducts();
 
+    // Optional: real-time update using Supabase
     const subscription = supabase
       .channel('public:products')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
         payload => {
-          setProducts(currentProducts => {
-            const newProduct = payload.new as Product;
-            const oldProduct = payload.old as Product;
-
-            switch (payload.eventType) {
-              case 'INSERT':
-                return [newProduct, ...currentProducts];
-              case 'UPDATE':
-                return currentProducts.map(prod =>
-                  prod.product_id === newProduct.product_id ? newProduct : prod
-                );
-              case 'DELETE':
-                return currentProducts.filter(prod => prod.product_id !== oldProduct.product_id);
-              default:
-                return currentProducts;
-            }
-          });
+          console.log('Change received!', payload);
+          fetchProducts();
         }
       )
       .subscribe();
@@ -78,203 +58,67 @@ const ProductListContainer: React.FC = () => {
     };
   }, []);
 
-  const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
-    await fetchProducts();
-    event.detail.complete();
-  };
-
-  const handleVerifyAndDelete = async () => {
-    setPasswordError('');
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user || !user.email) {
-      setPasswordError('User not authenticated.');
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: user.email,
-      password: userPassword,
-    });
+  const handleDelete = async (product_id: string) => {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('product_id', product_id);
 
     if (error) {
-      setPasswordError('Incorrect password.');
-      return;
+      console.error('Error deleting product:', error);
+    } else {
+      fetchProducts();
     }
-
-    if (productToDelete) {
-      await supabase.from('products').delete().eq('product_id', productToDelete);
-    }
-
-    setShowDeleteModal(false);
-    setProductToDelete(null);
-    setUserPassword('');
-    setPasswordError('');
   };
 
-  const handleEditChange = (field: keyof Product, value: any) => {
-    if (editProduct) setEditProduct({ ...editProduct, [field]: value });
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editProduct) return;
-    const { product_id, ...rest } = editProduct;
-    await supabase.from('products').update(rest).eq('product_id', product_id);
-    setEditProduct(null);
-  };
-
-  const groupedByCategory = products.reduce((groups: Record<string, Product[]>, product) => {
-    const category = product.category || 'Uncategorized';
-    if (!groups[category]) groups[category] = [];
-    groups[category].push(product);
-    return groups;
-  }, {});
+  if (isLoading) {
+    return (
+      <IonContent className="ion-padding">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <IonSpinner name="crescent" />
+        </div>
+      </IonContent>
+    );
+  }
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Product List</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent fullscreen className="ion-padding">
-        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-          <IonRefresherContent pullingText="Pull to refresh" refreshingSpinner="circles" />
-        </IonRefresher>
-
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <IonSpinner name="crescent" />
-          </div>
-        ) : products.length === 0 ? (
-          <IonText>No products found.</IonText>
-        ) : (
-          Object.entries(groupedByCategory).map(([category, categoryProducts]) => (
-            <IonCard key={category} style={{ marginBottom: '2rem' }}>
-              <IonCardContent>
-                <IonText color="primary">
-                  <h2>{category}</h2>
-                </IonText>
-                {categoryProducts.map(product => (
-                  <IonCard key={product.product_id} style={{ marginTop: '1rem' }}>
-                    <IonCardContent>
-                      <IonGrid>
-                        <IonRow>
-                          <IonCol size="6"><strong>Name:</strong> {product.product_name}</IonCol>
-                          <IonCol size="6"><strong>Price:</strong> ${product.price.toFixed(2)}</IonCol>
-                        </IonRow>
-                        <IonRow>
-                          <IonCol size="6"><strong>Stock:</strong> {product.stock_quantity}</IonCol>
-                          <IonCol size="6"><strong>Updated:</strong> {product.updated_at ? new Date(product.updated_at).toLocaleString() : 'N/A'}</IonCol>
-                        </IonRow>
-                        <IonRow>
-                          <IonCol size="6"><strong>Batch Date:</strong> {product.batchdate ? new Date(product.batchdate).toLocaleDateString() : 'N/A'}</IonCol>
-                          <IonCol size="6"><strong>Expiration Date:</strong> {product.expirationdate ? new Date(product.expirationdate).toLocaleDateString() : 'N/A'}</IonCol>
-                        </IonRow>
-                        <IonRow>
-                          <IonCol>
-                            <IonButton size="small" onClick={() => setEditProduct(product)}>Update</IonButton>
-                            <IonButton size="small" color="danger" onClick={() => {
-                              setProductToDelete(product.product_id);
-                              setShowDeleteModal(true);
-                            }}>Delete</IonButton>
-                          </IonCol>
-                        </IonRow>
-                      </IonGrid>
-                    </IonCardContent>
-                  </IonCard>
-                ))}
-              </IonCardContent>
-            </IonCard>
-          ))
-        )}
-
-        {/* Edit Modal */}
-        {editProduct && (
-          <>
-            <div style={{
-              position: 'fixed',
-              top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 998
-            }} onClick={() => setEditProduct(null)} />
-
-            <div style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 999,
-              width: '90%',
-              maxWidth: '400px'
-            }}>
+    <IonContent className="ion-padding">
+      <IonGrid>
+        <IonRow>
+          {products.map((product) => (
+            <IonCol size="12" sizeMd="6" sizeLg="4" key={product.product_id}>
               <IonCard>
+                <IonCardHeader>
+                  <IonCardTitle>{product.product_name}</IonCardTitle>
+                  <IonCardSubtitle>{product.category || 'Uncategorized'}</IonCardSubtitle>
+                </IonCardHeader>
                 <IonCardContent>
-                  <h3 style={{ textAlign: 'center' }}>Edit Product</h3>
-                  <IonItem>
-                    <IonLabel position="floating">Product Name</IonLabel>
-                    <IonInput value={editProduct.product_name} onIonChange={e => handleEditChange('product_name', e.detail.value!)} />
-                  </IonItem>
-                  <IonItem>
-                    <IonLabel position="floating">Price</IonLabel>
-                    <IonInput type="number" value={editProduct.price} onIonChange={e => handleEditChange('price', parseFloat(e.detail.value!))} />
-                  </IonItem>
-                  <IonItem>
-                    <IonLabel position="floating">Stock Quantity</IonLabel>
-                    <IonInput type="number" value={editProduct.stock_quantity} onIonChange={e => handleEditChange('stock_quantity', parseInt(e.detail.value!))} />
-                  </IonItem>
-                  <IonItem>
-                    <IonLabel position="floating">Category</IonLabel>
-                    <IonInput value={editProduct.category ?? ''} onIonChange={e => handleEditChange('category', e.detail.value!)} />
-                  </IonItem>
-                  <IonItem>
-                    <IonLabel position="floating">Batch Date</IonLabel>
-                    <IonInput type="date" value={editProduct.batchdate ? editProduct.batchdate.split('T')[0] : ''} onIonChange={e => handleEditChange('batchdate', e.detail.value!)} />
-                  </IonItem>
-                  <IonItem>
-                    <IonLabel position="floating">Expiration Date</IonLabel>
-                    <IonInput type="date" value={editProduct.expirationdate ? editProduct.expirationdate.split('T')[0] : ''} onIonChange={e => handleEditChange('expirationdate', e.detail.value!)} />
-                  </IonItem>
-                  <IonButton expand="block" onClick={handleSaveEdit}>Save Changes</IonButton>
-                  <IonButton expand="block" color="medium" onClick={() => setEditProduct(null)}>Cancel</IonButton>
+                  <p><strong>Price:</strong> ${product.price.toFixed(2)}</p>
+                  <p><strong>Stock:</strong> {product.stock_quantity}</p>
+                  <p><strong>Batch:</strong> {product.batchdate}</p>
+                  {product.expirationdate && <p><strong>Expires:</strong> {product.expirationdate}</p>}
+                  {product.description && <p><strong>Description:</strong> {product.description}</p>}
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                    <IonButton size="small" fill="clear" color="warning">
+                      <IonIcon icon={pencil} />
+                    </IonButton>
+                    <IonButton
+                      size="small"
+                      fill="clear"
+                      color="danger"
+                      onClick={() => handleDelete(product.product_id)}
+                    >
+                      <IonIcon icon={trash} />
+                    </IonButton>
+                  </div>
                 </IonCardContent>
               </IonCard>
-            </div>
-          </>
-        )}
-
-        {/* Delete with Password Modal */}
-        <IonModal isOpen={showDeleteModal} onDidDismiss={() => setShowDeleteModal(false)}>
-          <IonCard>
-            <IonCardContent>
-              <p>To confirm deletion, enter your password:</p>
-              <IonItem>
-                <IonLabel position="floating">Password</IonLabel>
-                <IonInput
-                  type="password"
-                  value={userPassword}
-                  onIonChange={e => setUserPassword(e.detail.value!)}
-                />
-              </IonItem>
-              {passwordError && (
-                <IonText color="danger">
-                  <p>{passwordError}</p>
-                </IonText>
-              )}
-              <IonButton color="danger" expand="block" onClick={handleVerifyAndDelete}>Yes, Delete</IonButton>
-              <IonButton expand="block" onClick={() => {
-                setShowDeleteModal(false);
-                setUserPassword('');
-                setPasswordError('');
-              }}>Cancel</IonButton>
-            </IonCardContent>
-          </IonCard>
-        </IonModal>
-      </IonContent>
-    </IonPage>
+            </IonCol>
+          ))}
+        </IonRow>
+      </IonGrid>
+    </IonContent>
   );
 };
 
