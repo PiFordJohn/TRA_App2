@@ -15,16 +15,18 @@ import {
   IonToolbar 
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { bookOutline,starHalf } from 'ionicons/icons'; 
+import { bookOutline,star,starHalf } from 'ionicons/icons'; 
 import { Route, Redirect } from 'react-router';
 
 import Products from './home-tabs/Products';
 import ProductListLogs from './home-tabs/ProductListLogs';
+import ProductList from './home-tabs/ProductList';
 
 const Home: React.FC = () => {
   const tabs = [
     { name: 'Products', tab: 'Products', url: '/TRA_App2/app/home/Products', icon: bookOutline },
     { name: 'ProductListLogs', tab: 'ProductListLogs', url: '/TRA_App2/app/home/ProductListLogs', icon: starHalf},
+    { name: 'ProductList', tab: 'ProductList', url: '/TRA_App2/app/home/ProductList', icon: star},
   ];
 
   return (
@@ -41,6 +43,7 @@ const Home: React.FC = () => {
 
        <IonRouterOutlet>
     <Route exact path="/TRA_App2/app/home/Products" component={Products} />
+    <Route exact path="/TRA_App2/app/home/ProductList" component={ProductList} />
     <Route exact path="/TRA_App2/app/home/ProductListLogs" component={ProductListLogs} />
     <Route exact path="/TRA_App2/app/home">
     <Redirect to="/TRA_App2/app/home/Products" />

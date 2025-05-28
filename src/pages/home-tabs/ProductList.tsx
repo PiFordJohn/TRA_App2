@@ -7,8 +7,9 @@ import {
       IonTitle, 
       IonToolbar 
   } from '@ionic/react';
-  
-  const Search: React.FC = () => {
+  import ListContainer from '../../components/ListContainer'
+
+  const ProductList: React.FC = () => {
     return (
       <IonPage>
         <IonHeader>
@@ -16,10 +17,11 @@ import {
             <IonButtons slot='start'>
               <IonMenuButton></IonMenuButton>
             </IonButtons>
-            <IonTitle>Search</IonTitle>
+            <IonTitle>ProductList</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent fullscreen>
+          <ListContainer/>
         <div
           style={{
             display: 'flex',
@@ -28,11 +30,11 @@ import {
             height: '100%',
           }}
         >
-          Search
+          ProductList
         </div>
         </IonContent>
       </IonPage>
     );
   };
   
-  export default Search;
+  export default ProductList;
