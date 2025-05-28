@@ -47,6 +47,11 @@ const ProductContainer = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [categoryCounts, setCategoryCounts] = useState<{ category: string; count: number }[]>([]);
 
+  // New states for summary counts
+  const [expiredCount, setExpiredCount] = useState(0);
+  const [outOfStockCount, setOutOfStockCount] = useState(0);
+  const [needRestockCount, setNeedRestockCount] = useState(0);
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -80,19 +85,36 @@ const ProductContainer = () => {
         }
       }
 
-      // Fetch product counts per category
+      // Fetch all products with needed fields
       const { data: allProducts, error: allError } = await supabase
         .from('products')
-        .select('category');
+        .select('category, stock_quantity, expirationdate');
 
       if (allError) {
         console.error('Error fetching all products:', allError);
       } else if (allProducts) {
+        // Calculate category counts
         const counts = categories.map(cat => ({
           category: cat,
           count: allProducts.filter(p => p.category === cat).length
         }));
         setCategoryCounts(counts);
+
+        // Calculate expired, out of stock, and need restock counts
+        const today = new Date();
+
+        const expired = allProducts.filter(p => {
+          if (!p.expirationdate) return false;
+          return new Date(p.expirationdate) < today;
+        }).length;
+
+        const outOfStock = allProducts.filter(p => p.stock_quantity === 0).length;
+
+        const needRestock = allProducts.filter(p => p.stock_quantity > 0 && p.stock_quantity < 5).length;
+
+        setExpiredCount(expired);
+        setOutOfStockCount(outOfStock);
+        setNeedRestockCount(needRestock);
       }
 
       setIsLoading(false);
@@ -165,10 +187,10 @@ const ProductContainer = () => {
       resetForm();
       setShowAddForm(false);
 
-      // Refresh category counts after adding new product
+      // Refresh category counts and summaries after adding new product
       const { data: updatedProducts, error: updatedError } = await supabase
         .from('products')
-        .select('category');
+        .select('category, stock_quantity, expirationdate');
 
       if (updatedError) {
         console.error('Error refreshing products:', updatedError);
@@ -178,6 +200,21 @@ const ProductContainer = () => {
           count: updatedProducts.filter(p => p.category === cat).length
         }));
         setCategoryCounts(counts);
+
+        const today = new Date();
+
+        const expired = updatedProducts.filter(p => {
+          if (!p.expirationdate) return false;
+          return new Date(p.expirationdate) < today;
+        }).length;
+
+        const outOfStock = updatedProducts.filter(p => p.stock_quantity === 0).length;
+
+        const needRestock = updatedProducts.filter(p => p.stock_quantity > 0 && p.stock_quantity < 5).length;
+
+        setExpiredCount(expired);
+        setOutOfStockCount(outOfStock);
+        setNeedRestockCount(needRestock);
       }
     }
   };
@@ -235,6 +272,42 @@ const ProductContainer = () => {
               ))}
             </IonRow>
           </IonGrid>
+
+          {/* New summary cards for expired, out of stock, restock */}
+          <IonGrid>
+            <IonRow>
+              <IonCol size="12" sizeMd="4" style={{ marginTop: 16 }}>
+                <IonCard color="danger">
+                  <IonCardHeader>
+                    <IonCardTitle>Expired Products</IonCardTitle>
+                  </IonCardHeader>
+                  <IonCardContent>
+                    <IonText>{expiredCount}</IonText>
+                  </IonCardContent>
+                </IonCard>
+              </IonCol>
+              <IonCol size="12" sizeMd="4" style={{ marginTop: 16 }}>
+                <IonCard color="medium">
+                  <IonCardHeader>
+                    <IonCardTitle>Out of Stocks</IonCardTitle>
+                  </IonCardHeader>
+                  <IonCardContent>
+                    <IonText>{outOfStockCount}</IonText>
+                  </IonCardContent>
+                </IonCard>
+              </IonCol>
+              <IonCol size="12" sizeMd="4" style={{ marginTop: 16 }}>
+                <IonCard color="warning">
+                  <IonCardHeader>
+                    <IonCardTitle>Need for Restocking</IonCardTitle>
+                  </IonCardHeader>
+                  <IonCardContent>
+                    <IonText>{needRestockCount}</IonText>
+                  </IonCardContent>
+                </IonCard>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
         </>
       ) : (
         <IonCard>
@@ -244,116 +317,103 @@ const ProductContainer = () => {
               {appUser?.username ? `Logged in as: ${appUser.username}` : ''}
             </IonCardSubtitle>
           </IonCardHeader>
-          <IonCardContent>
-            <IonGrid>
-              <IonRow>
-                <IonCol size="12" sizeMd="6">
-                  <IonItem>
-                    <IonLabel position="floating">Product Name*</IonLabel><br />
-                    <IonInput
-                      value={productName}
-                      onIonChange={e => setProductName(e.detail.value!)}
-                      placeholder="Enter product name"
-                    />
-                  </IonItem>
-                </IonCol>
-                <IonCol size="12" sizeMd="6">
-                  <IonItem>
-                    <IonLabel position="floating">Price*</IonLabel><br />
-                    <IonInput
-                      type="number"
-                      value={price}
-                      onIonChange={e => setPrice(e.detail.value!)}
-                      placeholder="0.00"
-                    />
-                  </IonItem>
-                </IonCol>
-              </IonRow>
+                    <IonCardContent>
+            <IonItem>
+              <IonLabel position="floating">Product Name *</IonLabel>
+              <IonInput
+                value={productName}
+                onIonChange={e => setProductName(e.detail.value!)}
+                required
+              />
+            </IonItem>
 
-              <IonRow>
-                <IonCol size="12" sizeMd="6">
-                  <IonItem>
-                    <IonLabel position="floating">Stock Quantity</IonLabel><br />
-                    <IonInput
-                      type="number"
-                      value={stockQuantity}
-                      onIonChange={e => setStockQuantity(e.detail.value!)}
-                      placeholder="0"
-                    />
-                  </IonItem>
-                </IonCol>
-                <IonCol size="12" sizeMd="6">
-                  <IonItem>
-                    <IonLabel>Category</IonLabel><br />
-                    <IonSelect
-                      value={category}
-                      onIonChange={e => setCategory(e.detail.value)}
-                      placeholder="Select category"
-                    >
-                      {categories.map(cat => (
-                        <IonSelectOption key={cat} value={cat}>{cat}</IonSelectOption>
-                      ))}
-                    </IonSelect>
-                  </IonItem>
-                </IonCol>
-              </IonRow>
+            <IonItem>
+              <IonLabel position="floating">Description</IonLabel>
+              <IonInput
+                value={description}
+                onIonChange={e => setDescription(e.detail.value!)}
+              />
+            </IonItem>
 
-              {/* New Batch Date and Expiration Date inputs */}
-              <IonRow>
-                <IonCol size="12" sizeMd="6">
-                  <IonItem>
-                    <IonLabel position="floating">Batch Date*</IonLabel><br></br>
-                    <IonInput
-                      type="date"
-                      value={batchDate}
-                      onIonChange={e => setBatchDate(e.detail.value!)}
-                      placeholder="Select batch date"
-                    />
-                  </IonItem>
-                </IonCol>
-                <IonCol size="12" sizeMd="6">
-                  <IonItem>
-                    <IonLabel position="floating">Expiration Date</IonLabel><br></br>
-                    <IonInput
-                      type="date"
-                      value={expirationDate}
-                      onIonChange={e => setExpirationDate(e.detail.value!)}
-                      placeholder="Select expiration date (optional)"
-                    />
-                  </IonItem>
-                </IonCol>
-              </IonRow>
+            <IonItem>
+              <IonLabel position="floating">Price *</IonLabel>
+              <IonInput
+                type="number"
+                value={price}
+                onIonChange={e => setPrice(e.detail.value!)}
+                required
+                min="0"
+                step="0.01"
+              />
+            </IonItem>
 
-              <IonRow>
-                <IonCol size="12">
-                  <IonItem>
-                    <IonLabel position="floating">Description</IonLabel><br></br>
-                    <IonInput
-                      value={description}
-                      onIonChange={e => setDescription(e.detail.value!)}
-                      placeholder="Product description"
-                    />
-                  </IonItem>
-                </IonCol>
-              </IonRow>
-            </IonGrid>
-          </IonCardContent>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px' }}>
-            <IonButton onClick={createProduct}>
-              <IonIcon icon={add} slot="start" />
-              Add Product
+            <IonItem>
+              <IonLabel position="floating">Stock Quantity</IonLabel>
+              <IonInput
+                type="number"
+                value={stockQuantity}
+                onIonChange={e => setStockQuantity(e.detail.value!)}
+                min="0"
+                step="1"
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel>Category</IonLabel>
+              <IonSelect
+                value={category}
+                placeholder="Select Category"
+                onIonChange={e => setCategory(e.detail.value)}
+              >
+                {categories.map(cat => (
+                  <IonSelectOption key={cat} value={cat}>
+                    {cat}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="floating">Batch Date *</IonLabel>
+              <IonInput
+                type="date"
+                value={batchDate}
+                onIonChange={e => setBatchDate(e.detail.value!)}
+                required
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="floating">Expiration Date</IonLabel>
+              <IonInput
+                type="date"
+                value={expirationDate}
+                onIonChange={e => setExpirationDate(e.detail.value!)}
+              />
+            </IonItem>
+
+            <IonButton expand="block" onClick={createProduct} style={{ marginTop: 20 }}>
+              Save Product
             </IonButton>
-            <IonButton color="medium" onClick={() => setShowAddForm(false)}>
+            <IonButton
+              expand="block"
+              color="medium"
+              onClick={() => {
+                setShowAddForm(false);
+                resetForm();
+              }}
+              style={{ marginTop: 10 }}
+            >
               Cancel
             </IonButton>
-          </div>
+          </IonCardContent>
         </IonCard>
       )}
 
       <IonAlert
         isOpen={isAlertOpen}
         onDidDismiss={() => setIsAlertOpen(false)}
-        header={'Notification'}
+        header={'Notice'}
         message={alertMessage}
         buttons={['OK']}
       />
@@ -362,3 +422,4 @@ const ProductContainer = () => {
 };
 
 export default ProductContainer;
+
