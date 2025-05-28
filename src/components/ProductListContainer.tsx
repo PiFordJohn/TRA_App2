@@ -83,8 +83,7 @@ const ProductListContainer = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
-        (payload) => {
-          console.log('Realtime event:', payload.eventType);
+        () => {
           fetchProducts();
         }
       )
@@ -131,6 +130,7 @@ const ProductListContainer = () => {
     } else {
       setEditModalOpen(false);
       setSelectedProduct(null);
+      fetchProducts();
     }
   };
 
@@ -142,31 +142,56 @@ const ProductListContainer = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (password !== 'your_password') {
+    // Get current user info
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user?.email) {
+      setDeleteError('User not logged in');
+      return;
+    }
+
+    // Re-authenticate user with entered password
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: password,
+    });
+
+    if (signInError) {
       setDeleteError('Incorrect password');
       return;
     }
 
     if (!selectedProduct) return;
 
-    const { error } = await supabase
+    // Proceed with delete
+    const { error: deleteError } = await supabase
       .from('products')
       .delete()
       .eq('product_id', selectedProduct.product_id);
 
-    if (error) {
-      console.error('Error deleting product:', error);
+    if (deleteError) {
+      console.error('Error deleting product:', deleteError);
       setDeleteError('Failed to delete product');
     } else {
       setDeleteModalOpen(false);
       setSelectedProduct(null);
+      fetchProducts();
     }
   };
 
   if (isLoading) {
     return (
       <IonContent className="ion-padding">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+          }}
+        >
           <IonSpinner name="crescent" />
         </div>
       </IonContent>
@@ -185,24 +210,57 @@ const ProductListContainer = () => {
                   <IonCardSubtitle>{product.category || 'Uncategorized'}</IonCardSubtitle>
                 </IonCardHeader>
                 <IonCardContent>
-                  <p><strong>Price:</strong> ₱{product.price.toFixed(2)}</p>
-                  <p><strong>Stock:</strong> {product.stock_quantity}</p>
-                  <p><strong>Batch:</strong> {product.batchdate}</p>
+                  <p>
+                    <strong>Price:</strong> ₱{product.price.toFixed(2)}
+                  </p>
+                  <p>
+                    <strong>Stock:</strong> {product.stock_quantity}
+                  </p>
+                  <p>
+                    <strong>Batch:</strong> {product.batchdate}
+                  </p>
                   {product.expirationdate && (
-                    <p><strong>Expires:</strong> {product.expirationdate}</p>
+                    <p>
+                      <strong>Expires:</strong> {product.expirationdate}
+                    </p>
                   )}
                   {product.description && (
-                    <p><strong>Description:</strong> {product.description}</p>
+                    <p>
+                      <strong>Description:</strong> {product.description}
+                    </p>
                   )}
-                  <p><strong>Created At:</strong> {new Date(product.created_at).toLocaleString()}</p>
+                  <p>
+                    <strong>Created At:</strong>{' '}
+                    {new Date(product.created_at).toLocaleString()}
+                  </p>
                   {product.updated_at && (
-                    <p><strong>Last Updated:</strong> {new Date(product.updated_at).toLocaleString()}</p>
+                    <p>
+                      <strong>Last Updated:</strong>{' '}
+                      {new Date(product.updated_at).toLocaleString()}
+                    </p>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
-                    <IonButton size="small" fill="clear" color="warning" onClick={() => openEditModal(product)}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: '8px',
+                      marginTop: '10px',
+                    }}
+                  >
+                    <IonButton
+                      size="small"
+                      fill="clear"
+                      color="warning"
+                      onClick={() => openEditModal(product)}
+                    >
                       <IonIcon icon={pencil} />
                     </IonButton>
-                    <IonButton size="small" fill="clear" color="danger" onClick={() => openDeleteModal(product)}>
+                    <IonButton
+                      size="small"
+                      fill="clear"
+                      color="danger"
+                      onClick={() => openDeleteModal(product)}
+                    >
                       <IonIcon icon={trash} />
                     </IonButton>
                   </div>
@@ -214,7 +272,11 @@ const ProductListContainer = () => {
       </IonGrid>
 
       {/* Edit Modal */}
-      <IonModal isOpen={editModalOpen} onDidDismiss={() => setEditModalOpen(false)}>
+      <IonModal
+        isOpen={editModalOpen}
+        onDidDismiss={() => setEditModalOpen(false)}
+        backdropDismiss={false}
+      >
         <IonHeader>
           <IonToolbar>
             <IonTitle>Edit Product</IonTitle>
@@ -227,77 +289,116 @@ const ProductListContainer = () => {
         </IonHeader>
         <IonContent className="ion-padding">
           <IonItem>
-            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Product Name</IonLabel><br></br>
+            <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
+              Product Name
+            </IonLabel><br></br>
             <IonInput
               value={editForm.product_name}
-              onIonChange={(e) => setEditForm({ ...editForm, product_name: e.detail.value! })}
+              onIonChange={(e) =>
+                setEditForm({ ...editForm, product_name: e.detail.value! })
+              }
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Description</IonLabel><br></br>
+            <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
+              Description
+            </IonLabel><br></br>
             <IonInput
               value={editForm.description}
-              onIonChange={(e) => setEditForm({ ...editForm, description: e.detail.value! })}
+              onIonChange={(e) =>
+                setEditForm({ ...editForm, description: e.detail.value! })
+              }
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Price</IonLabel><br></br>
+            <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
+              Price
+            </IonLabel><br></br>
             <IonInput
               type="number"
               value={editForm.price}
               onIonChange={(e) =>
-                setEditForm({ ...editForm, price: parseFloat(e.detail.value!) || 0 })
+                setEditForm({
+                  ...editForm,
+                  price: parseFloat(e.detail.value!) || 0,
+                })
               }
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Stock Quantity</IonLabel><br></br>
+            <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
+              Stock Quantity
+            </IonLabel><br></br>
             <IonInput
               type="number"
               value={editForm.stock_quantity}
               onIonChange={(e) =>
-                setEditForm({ ...editForm, stock_quantity: parseInt(e.detail.value!, 10) || 0 })
+                setEditForm({
+                  ...editForm,
+                  stock_quantity: parseInt(e.detail.value!, 10) || 0,
+                })
               }
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Category</IonLabel><br></br>
+            <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
+              Category
+            </IonLabel><br></br>
             <IonInput
               value={editForm.category}
-              onIonChange={(e) => setEditForm({ ...editForm, category: e.detail.value! })}
+              onIonChange={(e) =>
+                setEditForm({ ...editForm, category: e.detail.value! })
+              }
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Batch Date</IonLabel><br></br>
+            <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
+              Batch Date*
+            </IonLabel><br></br>
             <IonInput
               type="date"
               value={editForm.batchdate}
-              onIonChange={(e) => setEditForm({ ...editForm, batchdate: e.detail.value! })}
+              onIonChange={(e) =>
+                setEditForm({ ...editForm, batchdate: e.detail.value! })
+              }
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating" style={{ fontStyle: 'italic' }}>Expiration Date</IonLabel><br></br>
+            <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
+              Expiration Date
+            </IonLabel><br></br>
             <IonInput
               type="date"
               value={editForm.expirationdate}
-              onIonChange={(e) => setEditForm({ ...editForm, expirationdate: e.detail.value! })}
+              onIonChange={(e) =>
+                setEditForm({ ...editForm, expirationdate: e.detail.value! })
+              }
             />
           </IonItem>
 
-          <IonButton expand="block" style={{ marginTop: '20px' }} onClick={handleUpdate}>
+          <IonButton
+            expand="block"
+            style={{ marginTop: '20px' }}
+            onClick={handleUpdate}
+            disabled={!editForm.product_name || editForm.price <= 0}
+          >
             Update Product
           </IonButton>
         </IonContent>
       </IonModal>
 
       {/* Delete Modal */}
-      <IonModal isOpen={deleteModalOpen} onDidDismiss={() => setDeleteModalOpen(false)}>
+      <IonModal
+        isOpen={deleteModalOpen}
+        onDidDismiss={() => setDeleteModalOpen(false)}
+        backdropDismiss={false}
+      >
         <IonHeader>
           <IonToolbar>
             <IonTitle>Confirm Delete</IonTitle>
@@ -309,7 +410,10 @@ const ProductListContainer = () => {
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
-          <p>Are you sure you want to delete <strong>{selectedProduct?.product_name}</strong>?</p>
+          <p>
+            Are you sure you want to delete{' '}
+            <strong>{selectedProduct?.product_name}</strong>?
+          </p>
           <IonItem>
             <IonLabel position="floating">Enter your password</IonLabel>
             <IonInput
@@ -331,9 +435,11 @@ const ProductListContainer = () => {
             expand="block"
             style={{ marginTop: '20px' }}
             onClick={handleConfirmDelete}
+            disabled={!password}
           >
             Delete
           </IonButton>
+        
         </IonContent>
       </IonModal>
     </IonContent>
@@ -341,3 +447,4 @@ const ProductListContainer = () => {
 };
 
 export default ProductListContainer;
+

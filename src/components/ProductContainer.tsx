@@ -368,7 +368,7 @@ const ProductContainer = () => {
           </IonCardHeader>
           <IonCardContent>
             <IonItem>
-              <IonLabel position="floating">Product Name*</IonLabel>
+              <IonLabel position="floating" style={{ fontStyle: 'italic' }}>Product Name*</IonLabel><br></br>
               <IonInput
                 value={productName}
                 onIonChange={e => setProductName(e.detail.value!)}
@@ -377,7 +377,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating">Description</IonLabel>
+              <IonLabel position="floating" style={{ fontStyle: 'italic' }}>Description</IonLabel><br></br>
               <IonInput
                 value={description}
                 onIonChange={e => setDescription(e.detail.value!)}
@@ -385,7 +385,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating">Price*</IonLabel>
+              <IonLabel position="floating" style={{ fontStyle: 'italic' }}>Price*</IonLabel><br></br>
               <IonInput
                 type="number"
                 value={price}
@@ -397,7 +397,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating">Stock Quantity</IonLabel>
+              <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Stock Quantity</IonLabel><br></br>
               <IonInput
                 type="number"
                 value={stockQuantity}
@@ -407,7 +407,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel>Category</IonLabel>
+              <IonLabel style={{ fontStyle: 'italic' }}>Category</IonLabel>
               <IonSelect
                 value={category}
                 placeholder="Select Category"
@@ -422,7 +422,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating">Batch Date*</IonLabel>
+              <IonLabel position="floating"style={{ fontStyle: 'italic' }}>Batch Date*</IonLabel><br></br>
               <IonInput
                 type="date"
                 value={batchDate}
@@ -432,7 +432,7 @@ const ProductContainer = () => {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="floating">Expiration Date</IonLabel>
+              <IonLabel position="floating" style={{ fontStyle: 'italic' }}>Expiration Date</IonLabel><br></br>
               <IonInput
                 type="date"
                 value={expirationDate}
