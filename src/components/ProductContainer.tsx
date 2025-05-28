@@ -1,12 +1,16 @@
-import {
-  IonContent, IonButton, IonInput, IonLabel, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle,
-  IonCardTitle, IonAlert, IonText, IonCol, IonGrid, IonRow, IonIcon, IonItem, IonSelect, IonSelectOption, IonSpinner
-} from '@ionic/react';
 import { useState, useEffect } from 'react';
+import {
+  IonContent, IonButton, IonInput, IonLabel, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle,
+  IonAlert, IonText, IonCol, IonGrid, IonRow, IonIcon, IonItem, IonSelect, IonSelectOption, IonSpinner
+} from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabaseClient';
 import { add } from 'ionicons/icons';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
+} from 'recharts';
+
 
 interface Product {
   product_id: string;
@@ -18,8 +22,8 @@ interface Product {
   category: string | null;
   created_at: string;
   updated_at: string;
-  batchdate: string;
-  expirationdate: string | null;
+  batchdate: string;        // new
+  expirationdate: string | null;  // new
 }
 
 interface AppUser {
@@ -47,17 +51,20 @@ const ProductContainer = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [categoryCounts, setCategoryCounts] = useState<{ category: string; count: number }[]>([]);
 
+  // Summary counts and product lists for modal display
   const [expiredCount, setExpiredCount] = useState(0);
   const [outOfStockCount, setOutOfStockCount] = useState(0);
   const [needRestockCount, setNeedRestockCount] = useState(0);
-  const [totalProducts, setTotalProducts] = useState(0);
 
   const [expiredProducts, setExpiredProducts] = useState<Product[]>([]);
   const [outOfStockProducts, setOutOfStockProducts] = useState<Product[]>([]);
   const [needRestockProducts, setNeedRestockProducts] = useState<Product[]>([]);
 
+  // Function to load products and update counts + lists
   const loadProductData = async () => {
     setIsLoading(true);
+
+    // Get auth user
     const { data: authUserData, error: authError } = await supabase.auth.getUser();
     if (authError) {
       console.error('Error getting auth user:', authError);
@@ -67,6 +74,7 @@ const ProductContainer = () => {
     const fetchedUser = authUserData?.user ?? null;
     setAuthUser(fetchedUser);
 
+    // Get app user
     if (fetchedUser?.email) {
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -79,15 +87,21 @@ const ProductContainer = () => {
         setIsLoading(false);
         return;
       }
-      if (userData) setAppUser(userData as AppUser);
+
+      if (userData) {
+        setAppUser(userData as AppUser);
+      }
     }
 
-    const { data: allProducts, error: allError } = await supabase.from('products').select('*');
+    // Fetch all products with needed fields
+    const { data: allProducts, error: allError } = await supabase
+      .from('products')
+      .select('*'); // get all fields so we can show names
+
     if (allError) {
       console.error('Error fetching all products:', allError);
     } else if (allProducts) {
-      setTotalProducts(allProducts.length);
-
+      // Calculate category counts
       const counts = categories.map(cat => ({
         category: cat,
         count: allProducts.filter((p: Product) => p.category === cat).length
@@ -96,17 +110,21 @@ const ProductContainer = () => {
 
       const today = new Date();
 
-      const expiredList = allProducts.filter(p =>
-        p.expirationdate ? new Date(p.expirationdate) < today : false
-      );
+      // Expired products
+      const expiredList = allProducts.filter((p: Product) => {
+        if (!p.expirationdate) return false;
+        return new Date(p.expirationdate) < today;
+      });
       setExpiredProducts(expiredList);
       setExpiredCount(expiredList.length);
 
-      const outOfStockList = allProducts.filter(p => p.stock_quantity === 0);
+      // Out of stock products
+      const outOfStockList = allProducts.filter((p: Product) => p.stock_quantity === 0);
       setOutOfStockProducts(outOfStockList);
       setOutOfStockCount(outOfStockList.length);
 
-      const needRestockList = allProducts.filter(p => p.stock_quantity > 0 && p.stock_quantity < 5);
+      // Need restock products (stock > 0 but < 5)
+      const needRestockList = allProducts.filter((p: Product) => p.stock_quantity > 0 && p.stock_quantity < 5);
       setNeedRestockProducts(needRestockList);
       setNeedRestockCount(needRestockList.length);
     }
@@ -116,13 +134,20 @@ const ProductContainer = () => {
 
   useEffect(() => {
     loadProductData();
+
+    // Setup realtime subscription for changes on products table
     const productSubscription = supabase
       .channel('public:products')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-        loadProductData();
-      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          loadProductData(); // refresh data on any product insert/update/delete
+        }
+      )
       .subscribe();
 
+    // Cleanup subscription on unmount
     return () => {
       supabase.removeChannel(productSubscription);
     };
@@ -144,16 +169,19 @@ const ProductContainer = () => {
       setIsAlertOpen(true);
       return;
     }
+
     if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
       setAlertMessage('Please enter a valid price');
       setIsAlertOpen(true);
       return;
     }
+
     if (!batchDate) {
       setAlertMessage('Batch date is required');
       setIsAlertOpen(true);
       return;
     }
+
     if (!appUser) {
       setAlertMessage('User information not available');
       setIsAlertOpen(true);
@@ -171,7 +199,11 @@ const ProductContainer = () => {
       expirationdate: expirationDate || null
     };
 
-    const { data, error } = await supabase.from('products').insert([productData]).select('*');
+    const { data, error } = await supabase
+      .from('products')
+      .insert([productData])
+      .select('*');
+
     if (error) {
       console.error('Error creating product:', error);
       setAlertMessage(`Error: ${error.message}`);
@@ -184,26 +216,33 @@ const ProductContainer = () => {
       setIsAlertOpen(true);
       resetForm();
       setShowAddForm(false);
+      // loadProductData() will be called automatically by realtime subscription
     }
   };
 
+  // Handle alert display for product lists when user clicks the summary cards
   const handleSummaryClick = (type: 'expired' | 'outOfStock' | 'needRestock') => {
     let products: Product[] = [];
+    let title = '';
     switch (type) {
       case 'expired':
         products = expiredProducts;
+        title = 'Expired Products';
         break;
       case 'outOfStock':
         products = outOfStockProducts;
+        title = 'Out of Stock Products';
         break;
       case 'needRestock':
         products = needRestockProducts;
+        title = 'Products Need Restocking';
         break;
     }
 
     if (products.length === 0) {
       setAlertMessage('Nothing to display.');
     } else {
+      // List product names separated by commas
       setAlertMessage(products.map(p => p.product_name).join(', '));
     }
     setIsAlertOpen(true);
@@ -238,76 +277,175 @@ const ProductContainer = () => {
     <IonContent className="ion-padding">
       {!showAddForm ? (
         <>
-          <IonGrid>
-            <IonRow>
-              <IonCol size="12" sizeMd="6">
-                <IonCard>
-                  <IonCardContent>
-                    <IonButton onClick={() => setShowAddForm(true)}>
-                      <IonIcon icon={add} slot="start" />
-                      Add Product
-                    </IonButton>
-                  </IonCardContent>
-                </IonCard>
-              </IonCol>
-              <IonCol size="12" sizeMd="6">
-                <IonCard color="primary">
-                  <IonCardHeader>
-                    <IonCardTitle>Total Products</IonCardTitle>
-                    <IonCardSubtitle>{totalProducts}</IonCardSubtitle>
-                  </IonCardHeader>
-                </IonCard>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
+          {/* Add Product button inside IonCard */}
+          <IonCard style={{ margin: '16px' }}>
+            <IonCardContent style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <IonButton onClick={() => setShowAddForm(true)}>
+                <IonIcon icon={add} slot="start" />
+                Add Product
+              </IonButton>
+            </IonCardContent>
+          </IonCard>
 
+          {/* Summary cards now act as buttons */}
           <IonGrid>
             <IonRow>
-              {categoryCounts.map(({ category, count }) => (
-                <IonCol key={category} size="6" sizeMd="4" sizeLg="3" style={{ marginTop: 16 }}>
-                  <IonCard>
-                    <IonCardHeader>
-                      <IonCardTitle>{category}</IonCardTitle>
-                      <IonCardSubtitle>{count} products</IonCardSubtitle>
-                    </IonCardHeader>
-                  </IonCard>
-                </IonCol>
-              ))}
-            </IonRow>
-          </IonGrid>
-
-          <IonGrid>
-            <IonRow>
-              <IonCol size="12" sizeMd="4">
-                <IonButton expand="block" color="danger" onClick={() => handleSummaryClick('expired')}>
-                  <IonCardTitle>Expired</IonCardTitle>
+              <IonCol size="12" sizeMd="4" style={{ marginTop: 16 }}>
+                <IonButton
+                  expand="block"
+                  color="danger"
+                  onClick={() => handleSummaryClick('expired')}
+                >
+                  <IonCardTitle>Expired Products</IonCardTitle>
                   <IonCardSubtitle color="light">{expiredCount}</IonCardSubtitle>
                 </IonButton>
               </IonCol>
-              <IonCol size="12" sizeMd="4">
-                <IonButton expand="block" color="medium" onClick={() => handleSummaryClick('outOfStock')}>
-                  <IonCardTitle>Out of Stock</IonCardTitle>
+              <IonCol size="12" sizeMd="4" style={{ marginTop: 16 }}>
+                <IonButton
+                  expand="block"
+                  color="medium"
+                  onClick={() => handleSummaryClick('outOfStock')}
+                >
+                  <IonCardTitle>Out of Stocks</IonCardTitle>
                   <IonCardSubtitle color="light">{outOfStockCount}</IonCardSubtitle>
                 </IonButton>
               </IonCol>
-              <IonCol size="12" sizeMd="4">
-                <IonButton expand="block" color="warning" onClick={() => handleSummaryClick('needRestock')}>
-                  <IonCardTitle>Need Restock</IonCardTitle>
+              <IonCol size="12" sizeMd="4" style={{ marginTop: 16 }}>
+                <IonButton
+                  expand="block"
+                  color="warning"
+                  onClick={() => handleSummaryClick('needRestock')}
+                >
+                  <IonCardTitle>Need for Restocking</IonCardTitle>
                   <IonCardSubtitle color="light">{needRestockCount}</IonCardSubtitle>
                 </IonButton>
               </IonCol>
             </IonRow>
           </IonGrid>
+
+          <IonGrid>
+  <IonRow>
+    {categoryCounts.map(({ category, count }) => (
+      <IonCol key={category} size="6" sizeMd="4" sizeLg="3" style={{ marginTop: 16 }}>
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>{category}</IonCardTitle>
+            <IonCardSubtitle>{count} products</IonCardSubtitle>
+          </IonCardHeader>
+        </IonCard>
+      </IonCol>
+    ))}
+  </IonRow>
+
+  {/* 📊 Bar Chart of Category Counts */}
+  <IonRow>
+    <IonCol size="12">
+      <IonCard>
+        <IonCardHeader>
+          <IonCardTitle>Category Distribution</IonCardTitle>
+        </IonCardHeader>
+        <IonCardContent style={{ height: 300 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={categoryCounts}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="category" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#3880ff" />
+            </BarChart>
+          </ResponsiveContainer>
+        </IonCardContent>
+      </IonCard>
+    </IonCol>
+  </IonRow>
+</IonGrid>
+
         </>
       ) : (
-        // Add Product Form goes here
-        <IonCard>
+                <IonCard>
           <IonCardHeader>
             <IonCardTitle>Add New Product</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
-            {/* Input fields */}
-            {/* ... (omitted here for brevity, but should include form fields from your original code) */}
+            <IonItem>
+              <IonLabel position="floating">Product Name*</IonLabel>
+              <IonInput
+                value={productName}
+                onIonChange={e => setProductName(e.detail.value!)}
+                required
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="floating">Description</IonLabel>
+              <IonInput
+                value={description}
+                onIonChange={e => setDescription(e.detail.value!)}
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="floating">Price*</IonLabel>
+              <IonInput
+                type="number"
+                value={price}
+                onIonChange={e => setPrice(e.detail.value!)}
+                required
+                min="0"
+                step="0.01"
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="floating">Stock Quantity</IonLabel>
+              <IonInput
+                type="number"
+                value={stockQuantity}
+                onIonChange={e => setStockQuantity(e.detail.value!)}
+                min="0"
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel>Category</IonLabel>
+              <IonSelect
+                value={category}
+                placeholder="Select Category"
+                onIonChange={e => setCategory(e.detail.value)}
+              >
+                {categories.map(cat => (
+                  <IonSelectOption key={cat} value={cat}>
+                    {cat}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="floating">Batch Date*</IonLabel>
+              <IonInput
+                type="date"
+                value={batchDate}
+                onIonChange={e => setBatchDate(e.detail.value!)}
+                required
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="floating">Expiration Date</IonLabel>
+              <IonInput
+                type="date"
+                value={expirationDate}
+                onIonChange={e => setExpirationDate(e.detail.value!)}
+              />
+            </IonItem>
+
+            <IonButton expand="block" onClick={createProduct} style={{ marginTop: 16 }}>
+              Create Product
+            </IonButton>
+            <IonButton expand="block" color="medium" onClick={() => setShowAddForm(false)} style={{ marginTop: 8 }}>
+              Cancel
+            </IonButton>
           </IonCardContent>
         </IonCard>
       )}
@@ -315,7 +453,7 @@ const ProductContainer = () => {
       <IonAlert
         isOpen={isAlertOpen}
         onDidDismiss={() => setIsAlertOpen(false)}
-        header="Notice"
+        header="Info"
         message={alertMessage}
         buttons={['OK']}
       />
@@ -324,3 +462,4 @@ const ProductContainer = () => {
 };
 
 export default ProductContainer;
+
