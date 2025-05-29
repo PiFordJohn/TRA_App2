@@ -181,6 +181,83 @@ const ProductListContainer = () => {
     }
   };
 
+  // ====== PRINT REPORT FUNCTION ======
+ const handlePrint = () => {
+  const reportWindow = window.open('', '_blank');
+  if (!reportWindow) return;
+
+  const preparedDate = new Date().toLocaleString();
+
+  const htmlContent = `
+    <html>
+      <head>
+        <title>Product Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { text-align: center; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; }
+          .footer-section {
+            margin-top: 40px;
+            font-size: 14px;
+          }
+          .prepared-by-line {
+            margin-top: 50px;
+            border-bottom: 1px solid black;
+            width: 300px;
+            height: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Product Report</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Batch Date</th>
+              <th>Expiration Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${products
+              .map(
+                (p) => `
+              <tr>
+                <td>${p.product_name}</td>
+                <td>${p.category || 'Uncategorized'}</td>
+                <td>₱${p.price.toFixed(2)}</td>
+                <td>${p.stock_quantity}</td>
+                <td>${p.batchdate}</td>
+                <td>${p.expirationdate || '-'}</td>
+              </tr>
+            `
+              )
+              .join('')}
+          </tbody>
+        </table>
+
+        <div class="footer-section">
+          <p><strong>Date Prepared:</strong> ${preparedDate}</p>
+          <p><strong>Prepared By:</strong></p>
+          <div class="prepared-by-line"></div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  reportWindow.document.write(htmlContent);
+  reportWindow.document.close();
+  reportWindow.focus();
+  reportWindow.print();
+  reportWindow.close();
+};
+
+
   if (isLoading) {
     return (
       <IonContent className="ion-padding">
@@ -200,6 +277,11 @@ const ProductListContainer = () => {
 
   return (
     <IonContent className="ion-padding">
+      {/* Print Report Button */}
+      <IonButton onClick={handlePrint} style={{ marginBottom: '16px' }}>
+        Print Report
+      </IonButton>
+
       <IonGrid>
         <IonRow>
           {products.map((product) => (
@@ -291,7 +373,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Product Name
-            </IonLabel><br></br>
+            </IonLabel>
             <IonInput
               value={editForm.product_name}
               onIonChange={(e) =>
@@ -303,7 +385,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Description
-            </IonLabel><br></br>
+            </IonLabel>
             <IonInput
               value={editForm.description}
               onIonChange={(e) =>
@@ -315,7 +397,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Price
-            </IonLabel><br></br>
+            </IonLabel>
             <IonInput
               type="number"
               value={editForm.price}
@@ -331,7 +413,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Stock Quantity
-            </IonLabel><br></br>
+            </IonLabel>
             <IonInput
               type="number"
               value={editForm.stock_quantity}
@@ -347,7 +429,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Category
-            </IonLabel><br></br>
+            </IonLabel>
             <IonInput
               value={editForm.category}
               onIonChange={(e) =>
@@ -358,8 +440,8 @@ const ProductListContainer = () => {
 
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
-              Batch Date*
-            </IonLabel><br></br>
+              Batch Date
+            </IonLabel>
             <IonInput
               type="date"
               value={editForm.batchdate}
@@ -372,7 +454,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Expiration Date
-            </IonLabel><br></br>
+            </IonLabel>
             <IonInput
               type="date"
               value={editForm.expirationdate}
@@ -382,18 +464,13 @@ const ProductListContainer = () => {
             />
           </IonItem>
 
-          <IonButton
-            expand="block"
-            style={{ marginTop: '20px' }}
-            onClick={handleUpdate}
-            disabled={!editForm.product_name || editForm.price <= 0}
-          >
+          <IonButton expand="block" onClick={handleUpdate} style={{ marginTop: 20 }}>
             Update Product
           </IonButton>
         </IonContent>
       </IonModal>
 
-      {/* Delete Modal */}
+      {/* Delete Confirmation Modal */}
       <IonModal
         isOpen={deleteModalOpen}
         onDidDismiss={() => setDeleteModalOpen(false)}
@@ -410,36 +487,33 @@ const ProductListContainer = () => {
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
-          <p>
-            Are you sure you want to delete{' '}
+          <IonText>
+            Are you sure you want to delete the product{' '}
             <strong>{selectedProduct?.product_name}</strong>?
-          </p>
-          <IonItem>
+          </IonText>
+
+          <IonItem style={{ marginTop: '20px' }}>
             <IonLabel position="floating">Enter your password</IonLabel>
             <IonInput
               type="password"
               value={password}
-              onIonChange={(e) => {
-                setPassword(e.detail.value || '');
-                setDeleteError('');
-              }}
+              onIonChange={(e) => setPassword(e.detail.value!)}
             />
           </IonItem>
           {deleteError && (
-            <IonText color="danger" style={{ marginTop: 10 }}>
+            <IonText color="danger" style={{ marginTop: '10px' }}>
               {deleteError}
             </IonText>
           )}
+
           <IonButton
-            color="danger"
             expand="block"
-            style={{ marginTop: '20px' }}
+            color="danger"
             onClick={handleConfirmDelete}
-            disabled={!password}
+            style={{ marginTop: '20px' }}
           >
-            Delete
+            Delete Product
           </IonButton>
-        
         </IonContent>
       </IonModal>
     </IonContent>
@@ -447,4 +521,3 @@ const ProductListContainer = () => {
 };
 
 export default ProductListContainer;
-
