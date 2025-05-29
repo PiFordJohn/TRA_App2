@@ -373,7 +373,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Product Name
-            </IonLabel>
+            </IonLabel><br></br>
             <IonInput
               value={editForm.product_name}
               onIonChange={(e) =>
@@ -385,7 +385,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Description
-            </IonLabel>
+            </IonLabel><br></br>
             <IonInput
               value={editForm.description}
               onIonChange={(e) =>
@@ -397,7 +397,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Price
-            </IonLabel>
+            </IonLabel><br></br>
             <IonInput
               type="number"
               value={editForm.price}
@@ -413,7 +413,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Stock Quantity
-            </IonLabel>
+            </IonLabel><br></br>
             <IonInput
               type="number"
               value={editForm.stock_quantity}
@@ -429,7 +429,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Category
-            </IonLabel>
+            </IonLabel><br></br>
             <IonInput
               value={editForm.category}
               onIonChange={(e) =>
@@ -441,7 +441,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Batch Date
-            </IonLabel>
+            </IonLabel><br></br>
             <IonInput
               type="date"
               value={editForm.batchdate}
@@ -454,7 +454,7 @@ const ProductListContainer = () => {
           <IonItem>
             <IonLabel position="floating" style={{ fontStyle: 'italic' }}>
               Expiration Date
-            </IonLabel>
+            </IonLabel><br></br>
             <IonInput
               type="date"
               value={editForm.expirationdate}
